@@ -31,7 +31,7 @@ In Railway project settings, add these environment variables:
 NEXT_PUBLIC_API_URL=https://shambit.up.railway.app/api
 
 # REQUIRED - Update after deployment with your frontend URL
-NEXT_PUBLIC_APP_URL=https://your-frontend-app.up.railway.app
+NEXT_PUBLIC_APP_URL=https://shambittravels.up.railway.app
 
 # App Configuration
 NEXT_PUBLIC_APP_NAME=ShamBit
