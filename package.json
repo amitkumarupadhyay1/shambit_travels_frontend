@@ -9,7 +9,12 @@
     "lint": "eslint",
     "seed-data": "python scripts/seed-data.py",
     "test-backend": "node scripts/test-backend.js",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "health-check": "node scripts/health-check.js",
+    "deploy:staging": "bash scripts/deploy.sh staging",
+    "deploy:production": "bash scripts/deploy.sh production",
+    "docker:build": "docker build -t shambit-frontend .",
+    "docker:run": "docker run -p 3000:3000 shambit-frontend"
   },
   "dependencies": {
     "clsx": "^2.1.1",
