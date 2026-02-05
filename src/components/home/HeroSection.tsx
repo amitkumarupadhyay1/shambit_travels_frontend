@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { ChevronDown, MapPin } from 'lucide-react';
 import { cn, sacredStyles } from '@/lib/utils';
 import { apiService, City } from '@/lib/api';
+import InteractiveGradient from '@/components/common/InteractiveGradient';
 
 interface HeroSectionProps {
   onCitySelect: (city: City | null) => void;
@@ -48,19 +49,14 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center sacred-gradient overflow-hidden pt-20">
-      {/* Background Elements */}
-      <div className="absolute inset-0">
-        <div className="absolute top-20 right-20 w-64 h-64 bg-yellow-600/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-orange-600/10 rounded-full blur-3xl"></div>
-      </div>
-      {/* Background Elements */}
-      <div className="absolute inset-0">
-        <div className="absolute top-20 right-20 w-64 h-64 bg-primary-gold/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-primary-saffron/10 rounded-full blur-3xl"></div>
-      </div>
+    <section className="relative w-full min-h-screen flex items-center justify-center overflow-hidden m-0 p-0">
+      {/* Interactive Three.js Gradient Background - Full Coverage */}
+      <InteractiveGradient className="z-0 w-full h-full" />
+      
+      {/* Subtle overlay for better text readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/10 z-10"></div>
 
-      <div className={cn(sacredStyles.container, "relative z-10 text-center")}>
+      <div className={cn(sacredStyles.container, "relative z-20 text-center pt-20")}>
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
