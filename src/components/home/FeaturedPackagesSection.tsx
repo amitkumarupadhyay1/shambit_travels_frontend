@@ -18,7 +18,7 @@ const FeaturedPackagesSection = ({ selectedCity }: FeaturedPackagesSectionProps)
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const packagesData = selectedCity 
+        const packagesData = selectedCity
           ? await apiService.getPackagesByCity(selectedCity.id)
           : await apiService.getFeaturedPackages();
         setPackages(packagesData.slice(0, 6)); // Limit to 6 packages
@@ -59,10 +59,10 @@ const FeaturedPackagesSection = ({ selectedCity }: FeaturedPackagesSectionProps)
         >
           <h2 className={cn(sacredStyles.heading.h2, "mb-6")}>
             {selectedCity ? `${selectedCity.name} ` : 'Featured '}{' '}
-            <span className="gold-gradient bg-clip-text text-transparent">Packages</span>
+            <span className="sacred-gradient-text">Packages</span>
           </h2>
           <p className={cn(sacredStyles.text.body, "max-w-2xl mx-auto")}>
-            {selectedCity 
+            {selectedCity
               ? `Curated travel packages for your journey to ${selectedCity.name}`
               : 'Handcrafted spiritual journeys designed for transformative experiences'
             }
@@ -72,7 +72,7 @@ const FeaturedPackagesSection = ({ selectedCity }: FeaturedPackagesSectionProps)
         {packages.length === 0 ? (
           <div className="text-center py-12">
             <p className={sacredStyles.text.body}>
-              {selectedCity 
+              {selectedCity
                 ? `No packages available for ${selectedCity.name} at the moment.`
                 : 'No packages available at the moment.'
               }
@@ -97,11 +97,11 @@ const FeaturedPackagesSection = ({ selectedCity }: FeaturedPackagesSectionProps)
                         <Star className="w-12 h-12 text-yellow-600" />
                       </div>
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                      
+
                       {/* Price Badge */}
                       <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1">
                         <span className="font-bold text-orange-600">
-                          {pkg.experiences.length > 0 
+                          {pkg.experiences.length > 0
                             ? formatCurrency(Math.min(...pkg.experiences.map(e => e.base_price)))
                             : 'Custom'
                           }
@@ -114,7 +114,7 @@ const FeaturedPackagesSection = ({ selectedCity }: FeaturedPackagesSectionProps)
                       <h3 className={cn(sacredStyles.heading.h4, "mb-2 group-hover:text-orange-600 transition-colors")}>
                         {pkg.name}
                       </h3>
-                      
+
                       {/* Location & Duration */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center text-gray-600">
@@ -133,7 +133,7 @@ const FeaturedPackagesSection = ({ selectedCity }: FeaturedPackagesSectionProps)
                       <p className={cn(sacredStyles.text.body, "mb-4 line-clamp-3")}>
                         {pkg.description}
                       </p>
-                      
+
                       {/* Explore Link */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center text-orange-600 font-medium group-hover:text-yellow-600 transition-colors">
@@ -160,8 +160,8 @@ const FeaturedPackagesSection = ({ selectedCity }: FeaturedPackagesSectionProps)
           viewport={{ once: true }}
           className="text-center mt-12"
         >
-          <Link 
-            href={selectedCity ? `/packages?city=${selectedCity.id}` : "/packages"} 
+          <Link
+            href={selectedCity ? `/packages?city=${selectedCity.id}` : "/packages"}
             className={cn(sacredStyles.button.secondary, "inline-flex items-center")}
           >
             {selectedCity ? `View All ${selectedCity.name} Packages` : 'View All Packages'}

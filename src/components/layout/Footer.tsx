@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Facebook, Instagram, MessageCircle, Mail, Phone, MapPin } from 'lucide-react';
+import { Facebook, Instagram, MessageCircle, Mail, Phone, MapPin, Heart } from 'lucide-react';
 import { cn, sacredStyles } from '@/lib/utils';
 
 const Footer = () => {
@@ -25,7 +25,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-primary-midnight text-white">
+    <footer className="bg-gradient-to-br from-[#0F2027] via-[#203A43] to-[#2C5364] text-white">
       <div className={cn(sacredStyles.container, "py-16")}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand Section */}
@@ -38,13 +38,13 @@ const Footer = () => {
                 height={40}
                 className="rounded-lg"
               />
-              <div className="text-2xl lg:text-3xl font-playfair font-bold">
+              <div className="text-2xl lg:text-3xl font-playfair font-bold tracking-tight">
                 <span className="text-white">Sham</span>
-                <span className="gold-gradient bg-clip-text text-transparent">Bit</span>
+                <span className="sacred-gradient-text">Bit</span>
               </div>
             </Link>
             <p className="text-gray-300 mb-6 leading-relaxed">
-              Discover India&apos;s spiritual heritage through curated travel experiences. 
+              Discover India&apos;s spiritual heritage through curated travel experiences.
               From sacred temples to cultural immersion, we craft journeys that touch the soul.
             </p>
             <div className="flex space-x-4">
@@ -137,6 +137,13 @@ const Footer = () => {
             <p className="text-gray-400 text-sm">
               © 2026 ShamBit. All rights reserved.
             </p>
+
+            <div className="flex items-center space-x-1 text-sm text-gray-400 mt-2 md:mt-0">
+              <span>Made with</span>
+              <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+              <span>in Ayodhya</span>
+            </div>
+
             <Link
               href="/admin"
               className="text-gray-400 hover:text-primary-gold text-sm transition-colors duration-300 mt-4 md:mt-0"

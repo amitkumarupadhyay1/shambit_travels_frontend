@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Menu, X, User, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn, sacredStyles } from '@/lib/utils';
+import TopBar from './TopBar';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -18,14 +19,15 @@ const Header = () => {
   ];
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 font-sans">
+      <TopBar />
       <div className={cn(sacredStyles.container, "py-4")}>
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="text-2xl lg:text-3xl font-playfair font-bold">
-              <span className="midnight-gradient bg-clip-text text-transparent">Sham</span>
-              <span className="gold-gradient bg-clip-text text-transparent">Bit</span>
+            <div className="text-2xl lg:text-3xl font-playfair font-bold tracking-tight">
+              <span className="midnight-blue-gradient-text">Sham</span>
+              <span className="sacred-gradient-text">Bit</span>
             </div>
           </Link>
 

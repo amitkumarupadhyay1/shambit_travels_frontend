@@ -19,7 +19,7 @@ const LatestArticlesSection = ({ selectedCity }: LatestArticlesSectionProps) => 
   useEffect(() => {
     const fetchArticles = async () => {
       try {
-        const articlesData = selectedCity 
+        const articlesData = selectedCity
           ? await apiService.getArticlesByCity(selectedCity.id)
           : await apiService.getFeaturedArticles();
         setArticles(articlesData.slice(0, 6)); // Limit to 6 articles
@@ -60,10 +60,10 @@ const LatestArticlesSection = ({ selectedCity }: LatestArticlesSectionProps) => 
         >
           <h2 className={cn(sacredStyles.heading.h2, "mb-6")}>
             {selectedCity ? `${selectedCity.name} ` : 'Latest '}{' '}
-            <span className="gold-gradient bg-clip-text text-transparent">Stories</span>
+            <span className="sacred-gradient-text">Stories</span>
           </h2>
           <p className={cn(sacredStyles.text.body, "max-w-2xl mx-auto")}>
-            {selectedCity 
+            {selectedCity
               ? `Discover insights, guides, and stories about ${selectedCity.name}`
               : 'Discover insights, travel guides, and inspiring stories from our spiritual journeys'
             }
@@ -73,7 +73,7 @@ const LatestArticlesSection = ({ selectedCity }: LatestArticlesSectionProps) => 
         {articles.length === 0 ? (
           <div className="text-center py-12">
             <p className={sacredStyles.text.body}>
-              {selectedCity 
+              {selectedCity
                 ? `No articles available for ${selectedCity.name} at the moment.`
                 : 'No articles available at the moment.'
               }
@@ -241,8 +241,8 @@ const LatestArticlesSection = ({ selectedCity }: LatestArticlesSectionProps) => 
           viewport={{ once: true }}
           className="text-center mt-12"
         >
-          <Link 
-            href={selectedCity ? `/articles?city=${selectedCity.id}` : "/articles"} 
+          <Link
+            href={selectedCity ? `/articles?city=${selectedCity.id}` : "/articles"}
             className={cn(sacredStyles.button.secondary, "inline-flex items-center")}
           >
             {selectedCity ? `View All ${selectedCity.name} Articles` : 'View All Articles'}

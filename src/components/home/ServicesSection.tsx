@@ -55,7 +55,7 @@ const ServicesSection = () => {
           className="text-center mb-16"
         >
           <h2 className={cn(sacredStyles.heading.h2, "mb-6")}>
-            Our <span className="gold-gradient bg-clip-text text-transparent">Services</span>
+            Our <span className="sacred-gradient-text">Services</span>
           </h2>
           <p className={cn(sacredStyles.text.body, "max-w-2xl mx-auto")}>
             Comprehensive travel services designed to create meaningful and transformative spiritual journeys
@@ -84,7 +84,7 @@ const ServicesSection = () => {
                   <h3 className={cn(sacredStyles.heading.h4, "mb-4 group-hover:text-primary-saffron transition-colors")}>
                     {service.title}
                   </h3>
-                  
+
                   <p className={cn(sacredStyles.text.body, "mb-6")}>
                     {service.description}
                   </p>
@@ -114,12 +114,15 @@ const ServicesSection = () => {
         >
           <div className={cn(sacredStyles.card, "max-w-2xl mx-auto text-center")}>
             <h3 className={cn(sacredStyles.heading.h3, "mb-4")}>
-              Ready to Begin Your <span className="gold-gradient bg-clip-text text-transparent">Sacred Journey</span>?
+              Ready to Begin Your <span className="sacred-gradient-text">Sacred Journey</span>?
             </h3>
             <p className={cn(sacredStyles.text.body, "mb-6")}>
               Let us craft a personalized spiritual experience that resonates with your soul and creates lasting memories.
             </p>
-            <button className={cn(sacredStyles.button.primary, "text-lg")}>
+            <button
+              className={cn(sacredStyles.button.primary, "text-lg")}
+              suppressHydrationWarning
+            >
               Start Planning Today
             </button>
           </div>

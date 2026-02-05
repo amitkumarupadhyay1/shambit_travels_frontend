@@ -37,7 +37,7 @@ const HowItWorksSection = () => {
           className="text-center mb-16"
         >
           <h2 className={cn(sacredStyles.heading.h2, "mb-6")}>
-            How It <span className="gold-gradient bg-clip-text text-transparent">Works</span>
+            How It <span className="sacred-gradient-text">Works</span>
           </h2>
           <p className={cn(sacredStyles.text.body, "max-w-2xl mx-auto")}>
             Three simple steps to create your perfect spiritual journey

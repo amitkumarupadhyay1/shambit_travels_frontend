@@ -1,111 +1,99 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Noto+Serif+Devanagari:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #FAF7F0;
-  --foreground: #0F172A;
+  --background: #FFFCF9;
+  /* Premium Off-White / Sacred Cream */
+  --foreground: #1A1A1A;
+  /* Deep Charcoal for good contrast */
 }
 
 @theme {
-  --color-primary-saffron: #D97706;
-  --color-primary-gold: #C9A227;
-  --color-primary-ivory: #FAF7F0;
-  --color-primary-midnight: #0F172A;
-  
-  --color-secondary-stone: #E5E7EB;
-  --color-secondary-sand: #F5EFE6;
-  --color-secondary-maroon: #7C2D12;
-  
+  --color-google-blue: #4285F4;
+  --color-google-red: #EA4335;
+  --color-google-yellow: #FBBC05;
+  --color-google-green: #34A853;
+
+  --color-sacred-saffron: #FF9933;
+  --color-sacred-gold: #FFD700;
+  --color-spiritual-purple: #9C27B0;
+  --color-soft-pink: #F48FB1;
+  --color-deep-orange: #E65100;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  
+
   --font-family-playfair: 'Playfair Display', serif;
   --font-family-inter: 'Inter', sans-serif;
-  --font-family-noto-devanagari: 'Noto Serif Devanagari', serif;
-  
-  --animate-fade-up: fadeUp 0.6s ease-out;
-  --animate-scale-in: scaleIn 0.6s ease-out;
-  --animate-glow: glow 2s ease-in-out infinite alternate;
-  
-  --spacing-18: 4.5rem;
-  --spacing-120: 30rem;
-  
-  --radius-2xl: 16px;
+
+  --animate-float: float 8s ease-in-out infinite;
+  --animate-pulse-glow: pulseGlow 5s ease-in-out infinite;
 }
 
-@keyframes fadeUp {
-  0% { opacity: 0; transform: translateY(20px); }
-  100% { opacity: 1; transform: translateY(0); }
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
-@keyframes scaleIn {
-  0% { opacity: 0; transform: scale(0.98); }
-  100% { opacity: 1; transform: scale(1); }
-}
+@keyframes pulseGlow {
 
-@keyframes glow {
-  0% { box-shadow: 0 0 20px rgba(201, 162, 39, 0.3); }
-  100% { box-shadow: 0 0 30px rgba(201, 162, 39, 0.6); }
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: 'Inter', sans-serif;
-  line-height: 1.6;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
 }
 
-/* Ensure full viewport coverage */
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-}
-
-/* Remove default margins from main elements */
-* {
-  box-sizing: border-box;
-}
-
-/* Sacred Design Elements */
-.sacred-gradient {
-  background: linear-gradient(135deg, #FAF7F0 0%, #F5EFE6 100%);
-}
-
-.gold-gradient {
-  background: linear-gradient(135deg, #C9A227 0%, #D97706 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.midnight-gradient {
-  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.temple-shadow {
-  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.1);
-}
-
-.sacred-border {
-  border: 1px solid rgba(201, 162, 39, 0.25);
-}
-
-/* Font families */
+/* Typography & Utilities */
 .font-playfair {
   font-family: 'Playfair Display', serif;
 }
 
-.font-inter {
-  font-family: 'Inter', sans-serif;
+.will-change-transform {
+  will-change: transform;
 }
 
-.font-noto-devanagari {
-  font-family: 'Noto Serif Devanagari', serif;
+/* MAGNIFICENT GRADIENTS */
+.sacred-gradient-text {
+  background: linear-gradient(135deg, #FF9933 0%, #E65100 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline-block;
+}
+
+.midnight-blue-gradient-text {
+  background: linear-gradient(135deg, #0F2027 0%, #203A43 50%, #2C5364 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline-block;
+}
+
+.bg-radial-gradient-vignette {
+  background: radial-gradient(circle at center, transparent 20%, #FFFCF9 120%);
+}
+
+.sacred-gradient {
+  background: linear-gradient(to bottom, #FFFCF9 0%, #FFF5E6 100%);
 }

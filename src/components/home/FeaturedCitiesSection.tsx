@@ -19,8 +19,8 @@ const FeaturedCitiesSection = ({ selectedCity }: FeaturedCitiesSectionProps) => 
   useEffect(() => {
     const fetchCities = async () => {
       try {
-        const citiesData = selectedCity 
-          ? [selectedCity] 
+        const citiesData = selectedCity
+          ? [selectedCity]
           : await apiService.getCities();
         setCities(citiesData.slice(0, 6)); // Limit to 6 cities
       } catch (error) {
@@ -60,10 +60,10 @@ const FeaturedCitiesSection = ({ selectedCity }: FeaturedCitiesSectionProps) => 
         >
           <h2 className={cn(sacredStyles.heading.h2, "mb-6")}>
             {selectedCity ? `Explore ${selectedCity.name}` : 'Featured'}{' '}
-            <span className="gold-gradient bg-clip-text text-transparent">Destinations</span>
+            <span className="sacred-gradient-text">Destinations</span>
           </h2>
           <p className={cn(sacredStyles.text.body, "max-w-2xl mx-auto")}>
-            {selectedCity 
+            {selectedCity
               ? `Discover the spiritual essence and cultural treasures of ${selectedCity.name}`
               : 'Discover India\'s most sacred and culturally rich destinations'
             }
@@ -123,7 +123,7 @@ const FeaturedCitiesSection = ({ selectedCity }: FeaturedCitiesSectionProps) => 
                           {city.description}
                         </p>
                       )}
-                      
+
                       {/* Explore Link */}
                       <div className="flex items-center text-primary-saffron font-medium group-hover:text-primary-gold transition-colors">
                         <span>Explore {city.name}</span>

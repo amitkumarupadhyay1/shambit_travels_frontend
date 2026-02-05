@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { ChevronDown, MapPin } from 'lucide-react';
-import { cn, sacredStyles } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, MapPin, ArrowRight, SearchX } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { apiService, City } from '@/lib/api';
-import InteractiveGradient from '@/components/common/InteractiveGradient';
+
+// New Optimized Hero Components
+import Hero from './hero/Hero';
+
 
 interface HeroSectionProps {
   onCitySelect: (city: City | null) => void;
@@ -13,20 +16,20 @@ interface HeroSectionProps {
 
 const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
   const [cities, setCities] = useState<City[]>([]);
+  const [filteredCities, setFilteredCities] = useState<City[]>([]);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Initial Data Fetch
   useEffect(() => {
     const fetchCities = async () => {
       try {
-        console.log('🏙️ Fetching cities...');
         const citiesData = await apiService.getCities();
-        console.log('🏙️ Cities fetched:', citiesData);
-        setCities(citiesData);
+        setCities(citiesData || []);
       } catch (error) {
         console.error('❌ Failed to fetch cities:', error);
-        // Set empty array to show "no cities" state instead of loading forever
         setCities([]);
       } finally {
         setLoading(false);
@@ -36,125 +39,166 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
     fetchCities();
   }, []);
 
+  // Filter cities based on search
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredCities(cities);
+    } else {
+      const filtered = cities.filter(city =>
+        city.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredCities(filtered);
+    }
+  }, [searchQuery, cities]);
+
+  // Set Default "Ayodhya" if available (only once on initial load)
+  useEffect(() => {
+    if (cities.length > 0 && !selectedCity) {
+      const defaultCity = cities.find(c => c.name.toLowerCase() === "ayodhya");
+      if (defaultCity) {
+        setSelectedCity(defaultCity);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cities]); // Only run when cities are loaded
+
   const handleCitySelect = (city: City) => {
     setSelectedCity(city);
+    setSearchQuery(""); // Clear search query when city is selected
     setIsDropdownOpen(false);
     onCitySelect(city);
   };
 
-  const clearSelection = () => {
-    setSelectedCity(null);
-    setIsDropdownOpen(false);
-    onCitySelect(null);
-  };
-
   return (
-    <section className="relative w-full min-h-screen flex items-center justify-center overflow-hidden m-0 p-0">
-      {/* Interactive Three.js Gradient Background - Full Coverage */}
-      <InteractiveGradient className="z-0 w-full h-full" />
-      
-      {/* Subtle overlay for better text readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/10 z-10"></div>
+    <Hero>
+      <div className="flex flex-col items-center justify-center text-center max-w-6xl mx-auto px-4 z-30 relative">
 
-      <div className={cn(sacredStyles.container, "relative z-20 text-center pt-20")}>
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-        >
-          {/* Main Heading */}
-          <h1 className={cn(sacredStyles.heading.h1, "mb-6 max-w-4xl mx-auto")}>
-            Discover India&apos;s{' '}
-            <span className="gold-gradient bg-clip-text text-transparent">Sacred Heritage</span>
-            {' '}Beyond the Journey
-          </h1>
-
-          <p className={cn(sacredStyles.text.body, "mb-12 max-w-2xl mx-auto text-gray-600")}>
-            From ancient temples to spiritual experiences, we craft personalized journeys 
-            that connect you with India&apos;s divine essence and cultural treasures.
+        {/* Content appearing AFTER typing (handled by Hero wrapper) */}
+        {/* Content appearing AFTER typing (handled by Hero wrapper) */}
+        <div className="flex flex-col items-center space-y-8 w-full mt-4">
+          {/* Subtext - Premium Gray & 1 Line */}
+          <p className="text-lg md:text-xl max-w-3xl font-bold tracking-wide bg-gradient-to-r from-orange-600 via-amber-600 to-orange-500 bg-clip-text text-transparent drop-shadow-sm">
+            Your personalized journey to India&apos;s divine essence.
           </p>
 
-          {/* City Selector */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="max-w-md mx-auto mb-8"
-          >
-            <div className="relative">
-              <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="w-full bg-white rounded-2xl temple-shadow p-4 flex items-center justify-between text-left hover:shadow-lg transition-all duration-300"
-                disabled={loading}
-              >
-                <div className="flex items-center space-x-3">
-                  <MapPin className="w-5 h-5 text-yellow-600" />
-                  <span className="font-medium text-gray-700">
-                    {loading ? 'Loading cities...' : selectedCity ? selectedCity.name : 'Choose your destination'}
-                  </span>
-                </div>
-                <ChevronDown className={cn(
-                  "w-5 h-5 text-gray-400 transition-transform duration-200",
-                  isDropdownOpen && "rotate-180"
-                )} />
-              </button>
+          {/* City Search Combo Box - Premium Redesign */}
+          <div className="relative w-full max-w-lg mx-auto font-sans">
+            <div className="relative group z-50">
+              {/* Input Wrapper with Gradient Halo Effect */}
+              <div className="absolute -inset-[1px] bg-gradient-to-r from-orange-400 via-pink-500 to-blue-500 rounded-full opacity-30 group-hover:opacity-100 transition duration-500 blur-sm"></div>
 
-              {/* Dropdown */}
-              {isDropdownOpen && !loading && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl temple-shadow border border-gray-100 max-h-64 overflow-y-auto z-50"
-                >
-                  {selectedCity && (
-                    <button
-                      onClick={clearSelection}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 text-gray-500"
-                    >
-                      Clear selection
-                    </button>
-                  )}
-                  {cities.length === 0 ? (
-                    <div className="px-4 py-6 text-center text-gray-500">
-                      <p className="mb-2">No cities available</p>
-                      <p className="text-sm">Please make sure the backend is running</p>
-                    </div>
+              <div className="relative bg-white/90 backdrop-blur-2xl rounded-full shadow-2xl shadow-gray-200/50 flex items-center">
+                <div className="pl-6 text-orange-500">
+                  <MapPin className="w-5 h-5" />
+                </div>
+
+                <input
+                  type="text"
+                  value={searchQuery || (selectedCity ? selectedCity.name : "")}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSearchQuery(value);
+                    if (value !== (selectedCity?.name || "")) {
+                      setSelectedCity(null);
+                    }
+                    setIsDropdownOpen(true);
+                  }}
+                  onFocus={() => setIsDropdownOpen(true)}
+                  placeholder="Search destinations (e.g. Ayodhya)"
+                  className="w-full bg-transparent border-none outline-none focus:outline-none ring-0 focus:ring-0 py-4 px-4 text-gray-800 placeholder:text-gray-400 text-base font-medium leading-relaxed tracking-wide"
+                  disabled={loading}
+                />
+
+                <div className="pr-6">
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
                   ) : (
-                    cities.map((city) => (
-                      <button
-                        key={city.id}
-                        onClick={() => handleCitySelect(city)}
-                        className={cn(
-                          "w-full px-4 py-3 text-left hover:bg-orange-50 transition-colors",
-                          selectedCity?.id === city.id && "bg-orange-50 text-orange-600 font-medium"
-                        )}
-                      >
-                        <div>
-                          <div className="font-medium">{city.name}</div>
-                          <div className="text-sm text-gray-500">{city.slug}</div>
-                        </div>
-                      </button>
-                    ))
+                    <ChevronDown className={cn("w-5 h-5 text-gray-400 transition-transform duration-300", isDropdownOpen ? "rotate-180" : "rotate-0")} />
                   )}
-                </motion.div>
-              )}
+                </div>
+              </div>
+
+              {/* Search Results Dropdown - Professional Card Style */}
+              <AnimatePresence>
+                {isDropdownOpen && !loading && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-full left-0 right-0 mt-3 p-2 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-gray-100 overflow-hidden z-50"
+                  >
+                    <div className="max-h-72 overflow-y-auto pr-1 custom-scrollbar">
+                      {filteredCities.length > 0 ? (
+                        <>
+                          <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                            {searchQuery ? 'SearchResults' : 'Suggested Destinations'}
+                          </div>
+                          {filteredCities.map((city) => (
+                            <button
+                              key={city.id}
+                              onClick={() => handleCitySelect(city)}
+                              className="w-full p-3 rounded-xl hover:bg-orange-50/50 transition-all flex items-center justify-between group text-left"
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                                  <MapPin className="w-4 h-4" />
+                                </div>
+                                <div>
+                                  <span className="block text-gray-700 font-medium group-hover:text-gray-900">
+                                    {city.name}
+                                  </span>
+                                  <span className="block text-xs text-gray-400 group-hover:text-orange-500 transition-colors">
+                                    Divine Spiritual Centre
+                                  </span>
+                                </div>
+                              </div>
+                              <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-orange-500 -translate-x-2 group-hover:translate-x-0 opacity-0 group-hover:opacity-100 transition-all" />
+                            </button>
+                          ))}
+                        </>
+                      ) : (
+                        <div className="py-8 text-center">
+                          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-50 mb-3">
+                            <SearchX className="w-6 h-6 text-gray-400" />
+                          </div>
+                          <p className="text-gray-900 font-medium">No destinations found</p>
+                          <p className="text-sm text-gray-500 mt-1">We couldn&apos;t find &quot;{searchQuery}&quot;</p>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-          </motion.div>
+
+            {/* Background Overlay to close dropdown */}
+            {isDropdownOpen && (
+              <div
+                className="fixed inset-0 z-40 bg-transparent"
+                onClick={() => setIsDropdownOpen(false)}
+              />
+            )}
+          </div>
 
           {/* CTA Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className={cn(
+              "group relative overflow-hidden rounded-full px-10 py-4 font-bold text-lg transition-all duration-500",
+              "bg-gradient-to-r from-orange-600 to-amber-500 text-white shadow-xl shadow-orange-500/20 hover:shadow-orange-500/40"
+            )}
           >
-            <button className={cn(sacredStyles.button.primary, "text-lg px-12 py-4")}>
-              Start Planning Your Journey
-            </button>
-          </motion.div>
-        </motion.div>
+            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-in-out" />
+            <span className="relative flex items-center space-x-2">
+              <span className="tracking-wide">Begin The Journey</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </span>
+          </motion.button>
+        </div>
       </div>
-    </section>
+    </Hero>
   );
 };
 
