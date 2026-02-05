@@ -13,116 +13,163 @@ const vertexShader = `
   }
 `;
 
-// Fragment shader with interactive gradient diffusion
+// Advanced fragment shader with organic mesh gradient effect
 const fragmentShader = `
   uniform float u_time;
   uniform vec2 u_mouse;
   uniform vec2 u_resolution;
   varying vec2 vUv;
   
-  // Sacred color palette
+  // Sacred color palette - more vibrant for better blending
   vec3 saffron = vec3(0.851, 0.463, 0.024);  // #D97706
   vec3 gold = vec3(0.788, 0.635, 0.153);     // #C9A227
   vec3 ivory = vec3(0.980, 0.969, 0.941);    // #FAF7F0
   vec3 sand = vec3(0.961, 0.937, 0.902);     // #F5EFE6
+  vec3 lightGold = vec3(0.95, 0.85, 0.65);   // Lighter gold for highlights
   
-  // Noise function for organic movement
-  float noise(vec2 st) {
-    return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+  // Improved noise function
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
   }
   
-  // Smooth noise
-  float smoothNoise(vec2 st) {
-    vec2 i = floor(st);
-    vec2 f = fract(st);
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
     
-    float a = noise(i);
-    float b = noise(i + vec2(1.0, 0.0));
-    float c = noise(i + vec2(0.0, 1.0));
-    float d = noise(i + vec2(1.0, 1.0));
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
     
     vec2 u = f * f * (3.0 - 2.0 * f);
     
     return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
   }
   
-  // Fractal noise
-  float fbm(vec2 st) {
+  // Fractal Brownian Motion for organic patterns
+  float fbm(vec2 p) {
     float value = 0.0;
     float amplitude = 0.5;
+    float frequency = 1.0;
     
-    for (int i = 0; i < 4; i++) {
-      value += amplitude * smoothNoise(st);
-      st *= 2.0;
+    for(int i = 0; i < 6; i++) {
+      value += amplitude * noise(p * frequency);
+      frequency *= 2.0;
       amplitude *= 0.5;
     }
+    
     return value;
   }
   
+  // Smooth minimum function for organic blending
+  float smin(float a, float b, float k) {
+    float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+    return mix(b, a, h) - k * h * (1.0 - h);
+  }
+  
+  // Distance function for organic blobs
+  float blob(vec2 p, vec2 center, float radius) {
+    return length(p - center) - radius;
+  }
+  
   void main() {
-    vec2 st = vUv;
-    
-    // Normalize mouse coordinates to 0-1 range
+    vec2 uv = vUv;
     vec2 mouse = u_mouse / u_resolution;
     
-    // Create flowing movement based on time and mouse position
-    float time = u_time * 0.5;
+    // Normalize mouse to -1 to 1 range
+    mouse = (mouse - 0.5) * 2.0;
     
-    // Enhanced mouse influence - make it more responsive
-    vec2 mouseInfluence = (mouse - 0.5) * 2.0; // Center mouse and scale
+    float time = u_time * 0.3;
     
-    // Create dynamic flow based on mouse position
-    vec2 flow = vec2(
-      sin(time + st.x * 3.0 + mouseInfluence.x) * 0.2,
-      cos(time + st.y * 3.0 + mouseInfluence.y) * 0.2
+    // Create multiple organic blob centers that move and respond to mouse
+    vec2 blob1Center = vec2(
+      0.3 + sin(time * 0.8) * 0.2 + mouse.x * 0.1,
+      0.7 + cos(time * 0.6) * 0.15 + mouse.y * 0.08
     );
     
-    // Add mouse-driven distortion
-    flow += mouseInfluence * 0.3 * sin(time * 1.5);
+    vec2 blob2Center = vec2(
+      0.8 + sin(time * 1.2 + 2.0) * 0.18 + mouse.x * 0.12,
+      0.2 + cos(time * 0.9 + 1.5) * 0.2 + mouse.y * 0.1
+    );
     
-    // Create multiple gradient layers that respond to mouse
-    vec2 pos1 = st + flow + mouseInfluence * 0.1;
-    vec2 pos2 = st + flow * 1.5 + vec2(0.3, 0.1) + mouseInfluence * 0.15;
-    vec2 pos3 = st + flow * 0.7 + vec2(-0.2, 0.4) + mouseInfluence * 0.08;
+    vec2 blob3Center = vec2(
+      0.2 + sin(time * 0.7 + 4.0) * 0.25 + mouse.x * 0.08,
+      0.3 + cos(time * 1.1 + 3.0) * 0.18 + mouse.y * 0.12
+    );
     
-    // Generate noise patterns
-    float noise1 = fbm(pos1 * 2.0 + time);
-    float noise2 = fbm(pos2 * 1.5 + time * 1.2);
-    float noise3 = fbm(pos3 * 2.5 + time * 0.8);
+    vec2 blob4Center = vec2(
+      0.6 + sin(time * 0.9 + 1.0) * 0.15 + mouse.x * 0.15,
+      0.8 + cos(time * 0.8 + 2.5) * 0.22 + mouse.y * 0.09
+    );
     
-    // Create gradient zones that follow mouse more closely
-    float dist1 = distance(st, vec2(0.2 + mouse.x * 0.6, 0.8 + mouse.y * 0.4));
-    float dist2 = distance(st, vec2(0.8 + mouse.x * 0.4, 0.2 + mouse.y * 0.6));
-    float dist3 = distance(st, vec2(0.5 + mouse.x * 0.2, 0.5 + mouse.y * 0.2));
+    vec2 blob5Center = vec2(
+      0.5 + sin(time * 1.0 + 3.5) * 0.12 + mouse.x * 0.2,
+      0.5 + cos(time * 0.75 + 1.8) * 0.16 + mouse.y * 0.18
+    );
     
-    // Create smooth gradient blobs that respond to mouse
-    float blob1 = 1.0 - smoothstep(0.0, 0.7 + mouse.x * 0.3, dist1);
-    float blob2 = 1.0 - smoothstep(0.0, 0.9 + mouse.y * 0.3, dist2);
-    float blob3 = 1.0 - smoothstep(0.0, 0.5 + (mouse.x + mouse.y) * 0.2, dist3);
+    // Add noise-based distortion to blob centers
+    float noiseScale = 0.8;
+    blob1Center += vec2(fbm(uv * noiseScale + time), fbm(uv * noiseScale + time + 10.0)) * 0.05;
+    blob2Center += vec2(fbm(uv * noiseScale + time + 20.0), fbm(uv * noiseScale + time + 30.0)) * 0.06;
+    blob3Center += vec2(fbm(uv * noiseScale + time + 40.0), fbm(uv * noiseScale + time + 50.0)) * 0.04;
+    blob4Center += vec2(fbm(uv * noiseScale + time + 60.0), fbm(uv * noiseScale + time + 70.0)) * 0.07;
+    blob5Center += vec2(fbm(uv * noiseScale + time + 80.0), fbm(uv * noiseScale + time + 90.0)) * 0.05;
     
-    // Combine noise with blobs
-    blob1 *= (0.6 + noise1 * 0.4);
-    blob2 *= (0.6 + noise2 * 0.4);
-    blob3 *= (0.6 + noise3 * 0.4);
+    // Calculate distances to blobs with varying radii
+    float d1 = blob(uv, blob1Center, 0.25 + sin(time * 1.3) * 0.05);
+    float d2 = blob(uv, blob2Center, 0.3 + cos(time * 1.1) * 0.06);
+    float d3 = blob(uv, blob3Center, 0.2 + sin(time * 0.9) * 0.04);
+    float d4 = blob(uv, blob4Center, 0.35 + cos(time * 1.4) * 0.07);
+    float d5 = blob(uv, blob5Center, 0.28 + sin(time * 0.7) * 0.05);
     
-    // Mix colors based on blobs and noise
+    // Smooth minimum blending for organic shapes
+    float k = 0.15; // Blending factor
+    float d = smin(d1, d2, k);
+    d = smin(d, d3, k);
+    d = smin(d, d4, k);
+    d = smin(d, d5, k);
+    
+    // Convert distance to smooth gradient
+    float gradient = 1.0 - smoothstep(-0.1, 0.4, d);
+    
+    // Add fine noise for texture
+    float fineNoise = fbm(uv * 8.0 + time * 0.5) * 0.1;
+    gradient += fineNoise;
+    
+    // Create color zones based on blob influences
+    float influence1 = 1.0 - smoothstep(0.0, 0.6, length(uv - blob1Center));
+    float influence2 = 1.0 - smoothstep(0.0, 0.7, length(uv - blob2Center));
+    float influence3 = 1.0 - smoothstep(0.0, 0.5, length(uv - blob3Center));
+    float influence4 = 1.0 - smoothstep(0.0, 0.8, length(uv - blob4Center));
+    float influence5 = 1.0 - smoothstep(0.0, 0.6, length(uv - blob5Center));
+    
+    // Enhanced mouse influence
+    float mouseInfluence = 1.0 - smoothstep(0.0, 0.8, length(uv - (mouse * 0.5 + 0.5)));
+    mouseInfluence *= sin(time * 2.0) * 0.5 + 0.5;
+    
+    // Mix colors based on influences
     vec3 color = ivory; // Base color
     
-    // Add saffron influence with mouse interaction
-    color = mix(color, saffron, blob1 * (0.3 + mouse.x * 0.2));
+    // Layer colors with smooth blending
+    color = mix(color, saffron, influence1 * gradient * 0.6);
+    color = mix(color, gold, influence2 * gradient * 0.5);
+    color = mix(color, sand, influence3 * gradient * 0.7);
+    color = mix(color, lightGold, influence4 * gradient * 0.4);
+    color = mix(color, saffron * 0.8, influence5 * gradient * 0.5);
     
-    // Add gold influence with mouse interaction
-    color = mix(color, gold, blob2 * (0.25 + mouse.y * 0.2));
+    // Add mouse-driven color highlights
+    color = mix(color, gold * 1.2, mouseInfluence * 0.3);
     
-    // Add sand influence
-    color = mix(color, sand, blob3 * (0.4 + (mouse.x + mouse.y) * 0.1));
+    // Add subtle color variations based on position
+    float positionVariation = sin(uv.x * 3.14159) * cos(uv.y * 3.14159) * 0.1;
+    color += positionVariation * vec3(0.05, 0.03, 0.02);
     
-    // Add subtle overall noise for texture
-    float overallNoise = fbm(st * 4.0 + time * 0.5 + mouseInfluence * 0.1) * 0.08;
-    color += overallNoise;
+    // Ensure colors stay within a pleasant range
+    color = clamp(color, vec3(0.85, 0.82, 0.78), vec3(1.0, 0.98, 0.95));
     
-    // Ensure colors stay within sacred palette range
-    color = clamp(color, vec3(0.88, 0.88, 0.82), vec3(1.0, 1.0, 1.0));
+    // Add subtle vignette effect
+    float vignette = 1.0 - length(uv - 0.5) * 0.8;
+    color *= vignette;
     
     gl_FragColor = vec4(color, 1.0);
   }
@@ -184,42 +231,50 @@ export default function InteractiveGradient({ className = '' }: InteractiveGradi
     const handleMouseMove = (event: MouseEvent) => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        // Normalize mouse coordinates to screen space (0 to window dimensions)
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+        // Normalize to 0-1 range for better shader compatibility
+        const x = (event.clientX - rect.left) / rect.width;
+        const y = 1.0 - (event.clientY - rect.top) / rect.height; // Flip Y for WebGL
         
         setMousePosition({
-          x: x,
-          y: y,
+          x: x * rect.width,
+          y: y * rect.height,
         });
       }
     };
 
-    // Add global mouse move listener for better tracking
+    // Use global mouse tracking for better responsiveness
     const handleGlobalMouseMove = (event: MouseEvent) => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+        const x = (event.clientX - rect.left) / rect.width;
+        const y = 1.0 - (event.clientY - rect.top) / rect.height;
         
-        setMousePosition({
-          x: x,
-          y: y,
-        });
+        // Only update if mouse is within reasonable bounds
+        if (x >= -0.2 && x <= 1.2 && y >= -0.2 && y <= 1.2) {
+          setMousePosition({
+            x: x * rect.width,
+            y: y * rect.height,
+          });
+        }
       }
     };
 
-    // Listen to both container and global mouse movements
+    // Add both local and global listeners for smooth tracking
+    document.addEventListener('mousemove', handleGlobalMouseMove, { passive: true });
+    
     const container = containerRef.current;
     if (container) {
-      container.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mousemove', handleGlobalMouseMove);
+      container.addEventListener('mousemove', handleMouseMove, { passive: true });
       
       return () => {
         container.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mousemove', handleGlobalMouseMove);
       };
     }
+
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+    };
   }, []);
 
   return (
@@ -235,7 +290,8 @@ export default function InteractiveGradient({ className = '' }: InteractiveGradi
         }}
         gl={{ 
           antialias: true,
-          alpha: false
+          alpha: false,
+          powerPreference: 'high-performance'
         }}
       >
         <GradientMesh mousePosition={mousePosition} />
