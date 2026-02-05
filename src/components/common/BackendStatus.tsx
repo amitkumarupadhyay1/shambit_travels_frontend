@@ -1,37 +1,58 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
-import { cn, sacredStyles } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 const BackendStatus = () => {
   const [status, setStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
 
-  const checkBackendStatus = async () => {
+  const checkBackendStatus = useCallback(async () => {
     setStatus('checking');
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/cities/`, {
         method: 'HEAD',
-        timeout: 5000,
-      } as any);
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
       
       if (response.ok) {
         setStatus('connected');
       } else {
         setStatus('disconnected');
       }
-    } catch (error) {
+    } catch {
       setStatus('disconnected');
     }
     setLastChecked(new Date());
-  };
+  }, []);
 
   useEffect(() => {
-    checkBackendStatus();
-    const interval = setInterval(checkBackendStatus, 30000); // Check every 30 seconds
-    return () => clearInterval(interval);
-  }, []);
+    let mounted = true;
+    
+    const performCheck = async () => {
+      if (mounted) {
+        await checkBackendStatus();
+      }
+    };
+    
+    performCheck();
+    const interval = setInterval(() => {
+      if (mounted) {
+        performCheck();
+      }
+    }, 30000); // Check every 30 seconds
+    
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [checkBackendStatus]);
 
   const getStatusIcon = () => {
     switch (status) {

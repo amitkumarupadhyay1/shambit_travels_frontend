@@ -5,6 +5,7 @@
  * Verifies the application is running correctly after deployment
  */
 
+/* eslint-disable @typescript-eslint/no-require-imports */
 const http = require('http');
 const https = require('https');
 

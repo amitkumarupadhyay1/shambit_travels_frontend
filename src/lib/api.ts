@@ -27,6 +27,7 @@ export interface Article {
   excerpt?: string;
   author: string;
   city_name?: string;
+  featured_image?: string;
   meta_title?: string;
   meta_description?: string;
   created_at: string;

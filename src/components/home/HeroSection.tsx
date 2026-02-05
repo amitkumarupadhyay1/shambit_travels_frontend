@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDown, Search, MapPin } from 'lucide-react';
+import { ChevronDown, MapPin } from 'lucide-react';
 import { cn, sacredStyles } from '@/lib/utils';
 import { apiService, City } from '@/lib/api';
 
@@ -68,14 +68,14 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
         >
           {/* Main Heading */}
           <h1 className={cn(sacredStyles.heading.h1, "mb-6 max-w-4xl mx-auto")}>
-            Discover India's{' '}
+            Discover India&apos;s{' '}
             <span className="gold-gradient bg-clip-text text-transparent">Sacred Heritage</span>
             {' '}Beyond the Journey
           </h1>
 
           <p className={cn(sacredStyles.text.body, "mb-12 max-w-2xl mx-auto text-gray-600")}>
             From ancient temples to spiritual experiences, we craft personalized journeys 
-            that connect you with India's divine essence and cultural treasures.
+            that connect you with India&apos;s divine essence and cultural treasures.
           </p>
 
           {/* City Selector */}

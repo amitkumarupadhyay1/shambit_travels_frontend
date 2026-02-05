@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Calendar, MapPin, Star } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { cn, sacredStyles, formatCurrency } from '@/lib/utils';
 import { apiService, Package, City } from '@/lib/api';

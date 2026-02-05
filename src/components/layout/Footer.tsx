@@ -36,7 +36,7 @@ const Footer = () => {
               </div>
             </Link>
             <p className="text-gray-300 mb-6 leading-relaxed">
-              Discover India's spiritual heritage through curated travel experiences. 
+              Discover India&apos;s spiritual heritage through curated travel experiences. 
               From sacred temples to cultural immersion, we craft journeys that touch the soul.
             </p>
             <div className="flex space-x-4">
