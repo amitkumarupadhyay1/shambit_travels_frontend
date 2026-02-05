@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Facebook, Instagram, MessageCircle, Mail, Phone, MapPin } from 'lucide-react';
 import { cn, sacredStyles } from '@/lib/utils';
 
@@ -29,7 +30,14 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand Section */}
           <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center space-x-2 mb-6">
+            <Link href="/" className="flex items-center space-x-3 mb-6">
+              <Image
+                src="/logo.png"
+                alt="ShamBit Logo"
+                width={40}
+                height={40}
+                className="rounded-lg"
+              />
               <div className="text-2xl lg:text-3xl font-playfair font-bold">
                 <span className="text-white">Sham</span>
                 <span className="gold-gradient bg-clip-text text-transparent">Bit</span>
