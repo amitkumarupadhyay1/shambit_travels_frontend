@@ -1,4 +1,15 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
+  (typeof window !== 'undefined' && window.location.hostname.includes('railway.app') 
+    ? 'https://shambit.up.railway.app/api' 
+    : 'http://localhost:8000/api');
+
+// Debug logging
+if (typeof window !== 'undefined') {
+  console.log('🌍 Environment:', process.env.NODE_ENV);
+  console.log('🔗 API Base URL:', API_BASE_URL);
+  console.log('🏠 Hostname:', window.location.hostname);
+  console.log('📦 NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+}
 
 // API Response Types
 export interface PaginatedResponse<T> {
