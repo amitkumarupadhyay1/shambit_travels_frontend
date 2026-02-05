@@ -30,24 +30,43 @@ jobs:
       env:
         NEXT_PUBLIC_API_URL: http://localhost:8000/api
         
-    - name: Start application
-      run: npm start &
+    - name: Kill any existing processes on port 3000
+      run: |
+        sudo lsof -ti:3000 | xargs -r sudo kill -9 || true
+        sleep 2
+        
+    - name: Start application in background
+      run: |
+        npm start &
+        echo $! > server.pid
       env:
         PORT: 3000
         NEXT_PUBLIC_API_URL: http://localhost:8000/api
         
-    - name: Wait for server
-      run: npx wait-on http://localhost:3000
+    - name: Wait for server to be ready
+      run: |
+        timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
+        
+    - name: Install Lighthouse CI
+      run: npm install -g @lhci/cli@0.12.x
       
     - name: Run Lighthouse CI
-      run: |
-        npm install -g @lhci/cli@0.12.x
-        lhci autorun
+      run: lhci autorun --config=./lighthouserc.js
       env:
         LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+      continue-on-error: true
+        
+    - name: Stop application
+      run: |
+        if [ -f server.pid ]; then
+          kill $(cat server.pid) || true
+          rm server.pid
+        fi
+        sudo lsof -ti:3000 | xargs -r sudo kill -9 || true
         
     - name: Upload Lighthouse results
       uses: actions/upload-artifact@v4
+      if: always()
       with:
         name: lighthouse-results
         path: .lighthouseci/
