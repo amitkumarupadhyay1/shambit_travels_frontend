@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Calendar, User, MapPin } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { cn, sacredStyles, formatDate, truncateText } from '@/lib/utils';
+import { cn, sacredStyles, formatDate, truncateText, getImageUrl } from '@/lib/utils';
 import { apiService, Article, City } from '@/lib/api';
 
 interface LatestArticlesSectionProps {
@@ -97,7 +97,7 @@ const LatestArticlesSection = ({ selectedCity }: LatestArticlesSectionProps) => 
                       <div className="relative h-64 lg:h-80 rounded-xl overflow-hidden">
                         {articles[0].featured_image ? (
                           <Image
-                            src={articles[0].featured_image}
+                            src={getImageUrl(articles[0].featured_image) || ''}
                             alt={articles[0].title}
                             fill
                             className="object-cover group-hover:scale-110 transition-transform duration-500"
@@ -174,7 +174,7 @@ const LatestArticlesSection = ({ selectedCity }: LatestArticlesSectionProps) => 
                         <div className="relative h-48 mb-6 rounded-xl overflow-hidden">
                           {article.featured_image ? (
                             <Image
-                              src={article.featured_image}
+                              src={getImageUrl(article.featured_image) || ''}
                               alt={article.title}
                               fill
                               className="object-cover group-hover:scale-110 transition-transform duration-500"

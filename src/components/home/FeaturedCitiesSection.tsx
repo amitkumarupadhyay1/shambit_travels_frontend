@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, MapPin } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { cn, sacredStyles } from '@/lib/utils';
+import { cn, sacredStyles, getImageUrl } from '@/lib/utils';
 import { apiService, City } from '@/lib/api';
 
 interface FeaturedCitiesSectionProps {
@@ -91,7 +91,7 @@ const FeaturedCitiesSection = ({ selectedCity }: FeaturedCitiesSectionProps) => 
                     <div className="relative h-48 mb-6 rounded-xl overflow-hidden">
                       {city.hero_image ? (
                         <Image
-                          src={city.hero_image}
+                          src={getImageUrl(city.hero_image) || ''}
                           alt={city.name}
                           fill
                           className="object-cover group-hover:scale-110 transition-transform duration-500"

@@ -39,6 +39,34 @@ export function generateSlug(text: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
+// Get full image URL for backend media
+export function getImageUrl(imagePath?: string): string | undefined {
+  if (!imagePath) return undefined;
+  
+  // If it's already a full URL, return as is
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  
+  // Get the backend base URL
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 
+    (typeof window !== 'undefined' && window.location.hostname.includes('railway.app') 
+      ? 'https://shambit.up.railway.app' 
+      : 'http://localhost:8000');
+  
+  // Ensure the path starts with /
+  const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+  
+  const fullUrl = `${backendUrl}${cleanPath}`;
+  
+  // Debug logging
+  if (typeof window !== 'undefined') {
+    console.log('🖼️ Image URL:', { imagePath, backendUrl, fullUrl });
+  }
+  
+  return fullUrl;
+}
+
 // Sacred design helper classes
 export const sacredStyles = {
   container: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
