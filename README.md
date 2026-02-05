@@ -40,7 +40,7 @@ ShamBit connects travelers with India's spiritual heritage through:
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 20+
 - npm or yarn
 - ShamBit Backend API running (see [backend repo](https://github.com/amitkumarupadhyay1/shambit_travels_api_backend))
 
