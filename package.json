@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:railway": "npm ci && npm run build",
     "start": "next start",
     "lint": "eslint",
     "seed-data": "python scripts/seed-data.py",
