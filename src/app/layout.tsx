@@ -16,9 +16,16 @@ export const metadata: Metadata = {
   title: "ShamBit - Discover India's Spiritual Heritage",
   description: "Discover India's spiritual heritage through curated travel experiences. From sacred temples to cultural immersion, we craft journeys that touch the soul.",
   icons: {
-    icon: "/logo.png",
+    icon: [
+      { url: "/logo.png", sizes: "32x32", type: "image/png" },
+      { url: "/logo.png", sizes: "16x16", type: "image/png" },
+    ],
     shortcut: "/logo.png",
     apple: "/logo.png",
+    other: {
+      rel: "apple-touch-icon-precomposed",
+      url: "/logo.png",
+    },
   },
 };
 
