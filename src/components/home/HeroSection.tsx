@@ -65,6 +65,7 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
       const defaultCity = cities.find(c => c.name.toLowerCase() === "ayodhya");
       if (defaultCity) {
         setSelectedCity(defaultCity);
+        onCitySelect(defaultCity); // Notify parent component
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
