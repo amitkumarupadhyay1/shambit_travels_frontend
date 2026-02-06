@@ -21,6 +21,12 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  // Handle client-side mounting
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Initial Data Fetch
   useEffect(() => {
@@ -108,11 +114,11 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
                   onFocus={() => setIsDropdownOpen(true)}
                   placeholder="Search destinations (e.g. Ayodhya)"
                   className="w-full bg-transparent border-none outline-none focus:outline-none ring-0 focus:ring-0 py-4 px-4 text-gray-800 placeholder:text-gray-400 text-base font-medium leading-relaxed tracking-wide"
-                  disabled={loading}
+                  disabled={!mounted || loading}
                 />
 
                 <div className="pr-6">
-                  {loading ? (
+                  {!mounted || loading ? (
                     <div className="w-5 h-5 border-2 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
                   ) : (
                     <ChevronDown className={cn("w-5 h-5 text-gray-400 transition-transform duration-300", isDropdownOpen ? "rotate-180" : "rotate-0")} />
@@ -122,7 +128,7 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
 
               {/* Search Results Dropdown - Professional Card Style */}
               <AnimatePresence>
-                {isDropdownOpen && !loading && (
+                {mounted && isDropdownOpen && !loading && (
                   <motion.div
                     initial={{ opacity: 0, y: 8, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -170,7 +176,7 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
             </div>
 
             {/* Background Overlay to close dropdown */}
-            {isDropdownOpen && (
+            {mounted && isDropdownOpen && (
               <div
                 className="fixed inset-0 z-40 bg-transparent"
                 onClick={() => setIsDropdownOpen(false)}
