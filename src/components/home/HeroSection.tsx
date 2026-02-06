@@ -78,6 +78,41 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
     onCitySelect(city);
   };
 
+  // Don't render interactive elements until mounted to avoid hydration mismatch
+  if (!mounted) {
+    return (
+      <Hero>
+        <div className="flex flex-col items-center justify-center text-center max-w-6xl mx-auto px-4 z-30 relative">
+          <div className="flex flex-col items-center space-y-8 w-full mt-4">
+            <p className="text-lg md:text-xl max-w-3xl font-bold tracking-wide bg-gradient-to-r from-orange-600 via-amber-600 to-orange-500 bg-clip-text text-transparent drop-shadow-sm">
+              Your personalized journey to India&apos;s divine essence.
+            </p>
+            <div className="relative w-full max-w-lg mx-auto font-sans">
+              <div className="relative group z-50">
+                <div className="absolute -inset-[1px] bg-gradient-to-r from-orange-400 via-pink-500 to-blue-500 rounded-full opacity-30 blur-sm"></div>
+                <div className="relative bg-white/90 backdrop-blur-2xl rounded-full shadow-2xl shadow-gray-200/50 flex items-center">
+                  <div className="pl-6 text-orange-500">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <input
+                    type="text"
+                    value=""
+                    placeholder="Search destinations (e.g. Ayodhya)"
+                    className="w-full bg-transparent border-none outline-none focus:outline-none ring-0 focus:ring-0 py-4 px-4 text-gray-800 placeholder:text-gray-400 text-base font-medium leading-relaxed tracking-wide"
+                    readOnly
+                  />
+                  <div className="pr-6">
+                    <div className="w-5 h-5 border-2 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Hero>
+    );
+  }
+
   return (
     <Hero>
       <div className="flex flex-col items-center justify-center text-center max-w-6xl mx-auto px-4 z-30 relative">
@@ -115,11 +150,11 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
                   onFocus={() => setIsDropdownOpen(true)}
                   placeholder="Search destinations (e.g. Ayodhya)"
                   className="w-full bg-transparent border-none outline-none focus:outline-none ring-0 focus:ring-0 py-4 px-4 text-gray-800 placeholder:text-gray-400 text-base font-medium leading-relaxed tracking-wide"
-                  disabled={!mounted || loading}
+                  disabled={loading}
                 />
 
                 <div className="pr-6">
-                  {!mounted || loading ? (
+                  {loading ? (
                     <div className="w-5 h-5 border-2 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
                   ) : (
                     <ChevronDown className={cn("w-5 h-5 text-gray-400 transition-transform duration-300", isDropdownOpen ? "rotate-180" : "rotate-0")} />
@@ -129,7 +164,7 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
 
               {/* Search Results Dropdown - Professional Card Style */}
               <AnimatePresence>
-                {mounted && isDropdownOpen && !loading && (
+                {isDropdownOpen && !loading && (
                   <motion.div
                     initial={{ opacity: 0, y: 8, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -177,7 +212,7 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
             </div>
 
             {/* Background Overlay to close dropdown */}
-            {mounted && isDropdownOpen && (
+            {isDropdownOpen && (
               <div
                 className="fixed inset-0 z-40 bg-transparent"
                 onClick={() => setIsDropdownOpen(false)}
