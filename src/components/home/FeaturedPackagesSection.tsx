@@ -17,6 +17,7 @@ const FeaturedPackagesSection = ({ selectedCity }: FeaturedPackagesSectionProps)
 
   useEffect(() => {
     const fetchPackages = async () => {
+      setLoading(true);
       try {
         const packagesData = selectedCity
           ? await apiService.getPackagesByCity(selectedCity.id)
@@ -24,6 +25,7 @@ const FeaturedPackagesSection = ({ selectedCity }: FeaturedPackagesSectionProps)
         setPackages(packagesData.slice(0, 6)); // Limit to 6 packages
       } catch (error) {
         console.error('Failed to fetch packages:', error);
+        setPackages([]); // Set empty array on error
       } finally {
         setLoading(false);
       }

@@ -18,6 +18,7 @@ const FeaturedCitiesSection = ({ selectedCity }: FeaturedCitiesSectionProps) => 
 
   useEffect(() => {
     const fetchCities = async () => {
+      setLoading(true);
       try {
         const citiesData = selectedCity
           ? [selectedCity]
@@ -25,6 +26,7 @@ const FeaturedCitiesSection = ({ selectedCity }: FeaturedCitiesSectionProps) => 
         setCities(citiesData.slice(0, 6)); // Limit to 6 cities
       } catch (error) {
         console.error('Failed to fetch cities:', error);
+        setCities([]); // Set empty array on error
       } finally {
         setLoading(false);
       }

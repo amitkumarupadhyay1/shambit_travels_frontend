@@ -18,6 +18,7 @@ const LatestArticlesSection = ({ selectedCity }: LatestArticlesSectionProps) => 
 
   useEffect(() => {
     const fetchArticles = async () => {
+      setLoading(true);
       try {
         const articlesData = selectedCity
           ? await apiService.getArticlesByCity(selectedCity.id)
@@ -25,6 +26,7 @@ const LatestArticlesSection = ({ selectedCity }: LatestArticlesSectionProps) => 
         setArticles(articlesData.slice(0, 6)); // Limit to 6 articles
       } catch (error) {
         console.error('Failed to fetch articles:', error);
+        setArticles([]); // Set empty array on error
       } finally {
         setLoading(false);
       }
