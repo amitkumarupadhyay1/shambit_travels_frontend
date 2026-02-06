@@ -39,11 +39,13 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
     fetchCities();
   }, []);
 
-  // Filter cities based on search
+  // Filter cities based on search - limit to 5 initially, show all when searching
   useEffect(() => {
     if (searchQuery.trim() === "") {
-      setFilteredCities(cities);
+      // Show only first 5 cities when not searching
+      setFilteredCities(cities.slice(0, 3));
     } else {
+      // Show all matching cities when user is typing
       const filtered = cities.filter(city =>
         city.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
@@ -138,20 +140,15 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
                             <button
                               key={city.id}
                               onClick={() => handleCitySelect(city)}
-                              className="w-full p-3 rounded-xl hover:bg-orange-50/50 transition-all flex items-center justify-between group text-left"
+                              className="w-full p-2.5 rounded-xl hover:bg-orange-50/50 transition-all flex items-center justify-between group text-left"
                             >
                               <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors">
                                   <MapPin className="w-4 h-4" />
                                 </div>
-                                <div>
-                                  <span className="block text-gray-700 font-medium group-hover:text-gray-900">
-                                    {city.name}
-                                  </span>
-                                  <span className="block text-xs text-gray-400 group-hover:text-orange-500 transition-colors">
-                                    Divine Spiritual Centre
-                                  </span>
-                                </div>
+                                <span className="text-gray-700 font-medium group-hover:text-gray-900">
+                                  {city.name}
+                                </span>
                               </div>
                               <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-orange-500 -translate-x-2 group-hover:translate-x-0 opacity-0 group-hover:opacity-100 transition-all" />
                             </button>
