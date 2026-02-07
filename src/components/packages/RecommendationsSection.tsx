@@ -51,25 +51,12 @@ export default function RecommendationsSection({
     }
   };
 
-  const getIcon = () => {
-    switch (type) {
-      case 'similar':
-        return Sparkles;
-      case 'popular':
-        return TrendingUp;
-      case 'recommended':
-        return Users;
-      default:
-        return Sparkles;
-    }
-  };
-
-  const Icon = getIcon();
+  const IconComponent = type === 'similar' ? Sparkles : type === 'popular' ? TrendingUp : Users;
 
   return (
     <div className="py-12">
       <div className="flex items-center gap-3 mb-8">
-        <Icon className="w-6 h-6 text-orange-600" />
+        <IconComponent className="w-6 h-6 text-orange-600" />
         <h2 className={sacredStyles.heading.h2}>{getTitle()}</h2>
       </div>
 
