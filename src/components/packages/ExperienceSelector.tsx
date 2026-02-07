@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { Experience } from '@/lib/api';
 import { cn, sacredStyles, formatCurrency } from '@/lib/utils';
-import { Check } from 'lucide-react';
+import { Check, Info } from 'lucide-react';
+import ExperienceDetailModal from './ExperienceDetailModal';
 
 interface ExperienceSelectorProps {
   experiences: Experience[];
@@ -15,11 +17,31 @@ export default function ExperienceSelector({
   selected,
   onChange,
 }: ExperienceSelectorProps) {
+  const [modalExperience, setModalExperience] = useState<Experience | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const handleToggle = (id: number) => {
     if (selected.includes(id)) {
       onChange(selected.filter(x => x !== id));
     } else {
       onChange([...selected, id]);
+    }
+  };
+
+  const handleViewDetails = (experience: Experience, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setModalExperience(experience);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setModalExperience(null);
+  };
+
+  const handleToggleFromModal = () => {
+    if (modalExperience) {
+      handleToggle(modalExperience.id);
     }
   };
 
@@ -61,6 +83,7 @@ export default function ExperienceSelector({
             experience={exp}
             selected={selected.includes(exp.id)}
             onToggle={() => handleToggle(exp.id)}
+            onViewDetails={(e) => handleViewDetails(exp, e)}
           />
         ))}
       </div>
@@ -70,6 +93,15 @@ export default function ExperienceSelector({
           No experiences available for this package.
         </div>
       )}
+
+      {/* Experience Detail Modal */}
+      <ExperienceDetailModal
+        experience={modalExperience}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onToggle={handleToggleFromModal}
+        isSelected={modalExperience ? selected.includes(modalExperience.id) : false}
+      />
     </div>
   );
 }
@@ -78,9 +110,10 @@ interface ExperienceCardProps {
   experience: Experience;
   selected: boolean;
   onToggle: () => void;
+  onViewDetails: (e: React.MouseEvent) => void;
 }
 
-function ExperienceCard({ experience, selected, onToggle }: ExperienceCardProps) {
+function ExperienceCard({ experience, selected, onToggle, onViewDetails }: ExperienceCardProps) {
   return (
     <button
       onClick={onToggle}
@@ -116,7 +149,13 @@ function ExperienceCard({ experience, selected, onToggle }: ExperienceCardProps)
           <span className="text-lg font-bold text-orange-600">
             {formatCurrency(experience.base_price)}
           </span>
-          <span className="text-xs text-gray-500">per person</span>
+          <button
+            onClick={onViewDetails}
+            className="flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 font-medium"
+          >
+            <Info className="w-4 h-4" />
+            View Details
+          </button>
         </div>
       </div>
     </button>

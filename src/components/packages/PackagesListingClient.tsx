@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { Package, City, apiService } from '@/lib/api';
 import { cn, sacredStyles, formatCurrency } from '@/lib/utils';
-import { Search, Filter, Loader2, MapPin, Calendar } from 'lucide-react';
+import { Search, Filter, Loader2, MapPin, Calendar, GitCompare } from 'lucide-react';
 import Link from 'next/link';
+import { useComparison } from '@/contexts/ComparisonContext';
 
 export default function PackagesListingClient() {
   const [packages, setPackages] = useState<Package[]>([]);
@@ -161,57 +162,84 @@ interface PackageCardProps {
 }
 
 function PackageCard({ package: pkg }: PackageCardProps) {
+  const { addPackage, isInComparison } = useComparison();
   const minPrice = pkg.experiences.length > 0
     ? Math.min(...pkg.experiences.map(e => e.base_price))
     : 0;
 
+  const handleAddToCompare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addPackage(pkg);
+  };
+
+  const inComparison = isInComparison(pkg.id);
+
   return (
-    <Link href={`/packages/${pkg.slug}`}>
-      <div className={cn(
-        sacredStyles.card,
-        "group hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer h-full"
-      )}>
-        {/* Placeholder Image */}
-        <div className="relative h-48 mb-4 rounded-xl overflow-hidden bg-gradient-to-br from-orange-600/20 to-yellow-600/20">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <MapPin className="w-16 h-16 text-orange-600/40" />
-          </div>
-          
-          {/* Price Badge */}
-          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1">
-            <span className="font-bold text-orange-600">
-              From {formatCurrency(minPrice)}
-            </span>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div>
-          <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-            <MapPin className="w-4 h-4" />
-            <span>{pkg.city_name}</span>
+    <div className="relative">
+      <Link href={`/packages/${pkg.slug}`}>
+        <div className={cn(
+          sacredStyles.card,
+          "group hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer h-full"
+        )}>
+          {/* Placeholder Image */}
+          <div className="relative h-48 mb-4 rounded-xl overflow-hidden bg-gradient-to-br from-orange-600/20 to-yellow-600/20">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <MapPin className="w-16 h-16 text-orange-600/40" />
+            </div>
+            
+            {/* Price Badge */}
+            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1">
+              <span className="font-bold text-orange-600">
+                From {formatCurrency(minPrice)}
+              </span>
+            </div>
           </div>
 
-          <h3 className={cn(
-            sacredStyles.heading.h4,
-            "mb-2 group-hover:text-orange-600 transition-colors"
-          )}>
-            {pkg.name}
-          </h3>
+          {/* Content */}
+          <div>
+            <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+              <MapPin className="w-4 h-4" />
+              <span>{pkg.city_name}</span>
+            </div>
 
-          <p className={cn(sacredStyles.text.body, "mb-4 line-clamp-3")}>
-            {pkg.description}
-          </p>
+            <h3 className={cn(
+              sacredStyles.heading.h4,
+              "mb-2 group-hover:text-orange-600 transition-colors"
+            )}>
+              {pkg.name}
+            </h3>
 
-          {/* Stats */}
-          <div className="flex items-center gap-4 text-sm text-gray-600">
-            <div className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              <span>{pkg.experiences.length} Experiences</span>
+            <p className={cn(sacredStyles.text.body, "mb-4 line-clamp-3")}>
+              {pkg.description}
+            </p>
+
+            {/* Stats */}
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <div className="flex items-center gap-1">
+                <Calendar className="w-4 h-4" />
+                <span>{pkg.experiences.length} Experiences</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+
+      {/* Add to Compare Button */}
+      <button
+        onClick={handleAddToCompare}
+        disabled={inComparison}
+        className={cn(
+          "absolute top-4 left-4 z-10 px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
+          "flex items-center gap-1.5",
+          inComparison
+            ? "bg-green-600 text-white cursor-not-allowed"
+            : "bg-white/90 backdrop-blur-sm text-gray-700 hover:bg-orange-600 hover:text-white"
+        )}
+      >
+        <GitCompare className="w-4 h-4" />
+        {inComparison ? 'Added' : 'Compare'}
+      </button>
+    </div>
   );
 }
