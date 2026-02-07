@@ -91,7 +91,7 @@ const FeaturedPackagesSection = ({ selectedCity }: FeaturedPackagesSectionProps)
                 viewport={{ once: true }}
                 className="group"
               >
-                <Link href={`/packages/${pkg.id}`}>
+                <Link href={`/packages/${pkg.slug}`}>
                   <div className={cn(sacredStyles.card, "overflow-hidden hover:shadow-xl transition-all duration-300 group-hover:scale-105")}>
                     {/* Package Image - Packages don't have featured_image, using placeholder */}
                     <div className="relative h-48 mb-6 rounded-xl overflow-hidden">

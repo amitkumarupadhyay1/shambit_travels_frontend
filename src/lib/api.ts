@@ -274,6 +274,69 @@ class ApiService {
     const response = await this.fetchApi<PaginatedResponse<HotelTier>>(`/packages/hotel-tiers/?city=${cityId}`);
     return response.results;
   }
+
+  // Package Detail
+  async getPackage(slug: string): Promise<Package> {
+    return this.fetchApi<Package>(`/packages/packages/${slug}/`);
+  }
+
+  // Price Calculation
+  async calculatePrice(
+    slug: string,
+    selections: {
+      experience_ids: number[];
+      hotel_tier_id: number;
+      transport_option_id: number;
+    }
+  ): Promise<PriceCalculation> {
+    return this.fetchApi<PriceCalculation>(
+      `/packages/packages/${slug}/calculate_price/`,
+      {
+        method: 'POST',
+        body: JSON.stringify(selections),
+        skipCache: true, // Never cache price calculations
+      }
+    );
+  }
+
+  // Price Range
+  async getPriceRange(slug: string): Promise<PriceRange> {
+    return this.fetchApi<PriceRange>(`/packages/packages/${slug}/price_range/`);
+  }
+}
+
+// Price Calculation Response Types
+export interface PriceCalculation {
+  total_price: string;
+  currency: string;
+  breakdown: {
+    experiences: Array<{
+      id: number;
+      name: string;
+      price: string;
+    }>;
+    hotel_tier: {
+      id: number;
+      name: string;
+      price_multiplier: string;
+    };
+    transport: {
+      id: number;
+      name: string;
+      price: string;
+    };
+  };
+  pricing_note: string;
+}
+
+export interface PriceRange {
+  package: string;
+  price_range: {
+    min_price: string;
+    max_price: string;
+    currency: string;
+  };
+  note: string;
 }
 
 export const apiService = new ApiService();
