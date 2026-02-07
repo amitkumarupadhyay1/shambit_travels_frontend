@@ -19,6 +19,7 @@ export default function Home() {
   const [isLoadingDefaultCity, setIsLoadingDefaultCity] = useState(true);
   const [isLoadingCityContent, setIsLoadingCityContent] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load default city on mount
   useEffect(() => {
@@ -44,22 +45,51 @@ export default function Home() {
   const handleCitySelect = (city: City | null) => {
     if (city?.id === selectedCity?.id) return; // Don't reload if same city
     
+    // Cancel previous loading timeout
+    if (loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current);
+    }
+
+    // Cancel any pending API requests
+    apiService.cancelAllRequests();
+    
     setIsLoadingCityContent(true);
     setSelectedCity(city);
     
-    // Simulate minimum loading time for smooth UX
-    setTimeout(() => {
+    // Set minimum loading time for smooth UX (but will wait for actual API calls)
+    loadingTimeoutRef.current = setTimeout(() => {
       setIsLoadingCityContent(false);
-    }, 800);
+    }, 1500);
   };
 
-  // Scroll to content sections
+  // Scroll to content sections and trigger loading
   const scrollToContent = () => {
+    if (!selectedCity) return;
+
+    // Show loading state
+    setIsLoadingCityContent(true);
+
+    // Scroll to content
     contentRef.current?.scrollIntoView({ 
       behavior: 'smooth', 
       block: 'start' 
     });
+
+    // Hide loading after scroll completes
+    setTimeout(() => {
+      setIsLoadingCityContent(false);
+    }, 1000);
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+      apiService.cancelAllRequests();
+    };
+  }, []);
 
   return (
     <main className="min-h-screen relative">
@@ -71,6 +101,7 @@ export default function Home() {
         initialCity={selectedCity}
         isLoadingDefaultCity={isLoadingDefaultCity}
         onExploreClick={scrollToContent}
+        isExploreLoading={isLoadingCityContent}
       />
       
       {/* How It Works */}

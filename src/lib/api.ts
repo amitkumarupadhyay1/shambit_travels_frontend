@@ -80,35 +80,135 @@ export interface TransportOption {
   base_price: number;
 }
 
+// Cache configuration
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
 // API Functions
 class ApiService {
-  private async fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  private cache: Map<string, CacheEntry<unknown>> = new Map();
+  private pendingRequests: Map<string, Promise<unknown>> = new Map();
+  private abortControllers: Map<string, AbortController> = new Map();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+  private getCacheKey(endpoint: string): string {
+    return endpoint;
+  }
+
+  private isCacheValid<T>(entry: CacheEntry<T>): boolean {
+    return Date.now() - entry.timestamp < this.CACHE_TTL;
+  }
+
+  private getFromCache<T>(endpoint: string): T | null {
+    const cacheKey = this.getCacheKey(endpoint);
+    const entry = this.cache.get(cacheKey) as CacheEntry<T> | undefined;
+    
+    if (entry && this.isCacheValid(entry)) {
+      console.log(`💾 Cache hit for ${endpoint}`);
+      return entry.data;
+    }
+    
+    return null;
+  }
+
+  private setCache<T>(endpoint: string, data: T): void {
+    const cacheKey = this.getCacheKey(endpoint);
+    this.cache.set(cacheKey, {
+      data,
+      timestamp: Date.now(),
+    });
+  }
+
+  public clearCache(): void {
+    this.cache.clear();
+    console.log('🗑️ Cache cleared');
+  }
+
+  public cancelRequest(endpoint: string): void {
+    const controller = this.abortControllers.get(endpoint);
+    if (controller) {
+      controller.abort();
+      this.abortControllers.delete(endpoint);
+      this.pendingRequests.delete(endpoint);
+      console.log(`🚫 Request cancelled for ${endpoint}`);
+    }
+  }
+
+  public cancelAllRequests(): void {
+    this.abortControllers.forEach((controller) => controller.abort());
+    this.abortControllers.clear();
+    this.pendingRequests.clear();
+    console.log('🚫 All requests cancelled');
+  }
+
+  private async fetchApi<T>(endpoint: string, options?: RequestInit & { skipCache?: boolean }): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
     
-    console.log(`🔗 API Call: ${url}`); // Debug log
-    
-    try {
-      const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options?.headers,
-        },
-        ...options,
-      });
-
-      console.log(`📡 Response Status: ${response.status} for ${endpoint}`); // Debug log
-
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    // Check cache first (unless skipCache is true)
+    if (!options?.skipCache) {
+      const cachedData = this.getFromCache<T>(endpoint);
+      if (cachedData !== null) {
+        return cachedData;
       }
-
-      const data = await response.json();
-      console.log(`✅ Data received for ${endpoint}:`, data); // Debug log
-      return data;
-    } catch (error) {
-      console.error(`❌ API call failed for ${endpoint}:`, error);
-      throw error;
     }
+
+    // Check if there's already a pending request for this endpoint
+    const pendingRequest = this.pendingRequests.get(endpoint);
+    if (pendingRequest) {
+      console.log(`⏳ Reusing pending request for ${endpoint}`);
+      return pendingRequest as Promise<T>;
+    }
+
+    console.log(`🔗 API Call: ${url}`);
+    
+    // Create abort controller for this request
+    const controller = new AbortController();
+    this.abortControllers.set(endpoint, controller);
+
+    const requestPromise = (async () => {
+      try {
+        const response = await fetch(url, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...options?.headers,
+          },
+          signal: controller.signal,
+          ...options,
+        });
+
+        console.log(`📡 Response Status: ${response.status} for ${endpoint}`);
+
+        if (!response.ok) {
+          throw new Error(`API Error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log(`✅ Data received for ${endpoint}:`, data);
+        
+        // Cache the response
+        this.setCache(endpoint, data);
+        
+        return data;
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log(`🚫 Request aborted for ${endpoint}`);
+          throw error;
+        }
+        console.error(`❌ API call failed for ${endpoint}:`, error);
+        throw error;
+      } finally {
+        // Clean up
+        this.abortControllers.delete(endpoint);
+        this.pendingRequests.delete(endpoint);
+      }
+    })();
+
+    // Store the pending request
+    this.pendingRequests.set(endpoint, requestPromise);
+
+    return requestPromise as Promise<T>;
   }
 
   // Cities
