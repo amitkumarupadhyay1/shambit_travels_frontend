@@ -14,9 +14,10 @@ interface HeroSectionProps {
   onCitySelect: (city: City | null) => void;
   initialCity: City | null;
   isLoadingDefaultCity: boolean;
+  onExploreClick?: () => void;
 }
 
-const HeroSection = ({ onCitySelect, initialCity, isLoadingDefaultCity }: HeroSectionProps) => {
+const HeroSection = ({ onCitySelect, initialCity, isLoadingDefaultCity, onExploreClick }: HeroSectionProps) => {
   const [cities, setCities] = useState<City[]>([]);
   const [filteredCities, setFilteredCities] = useState<City[]>([]);
   const [selectedCity, setSelectedCity] = useState<City | null>(initialCity);
@@ -24,6 +25,7 @@ const HeroSection = ({ onCitySelect, initialCity, isLoadingDefaultCity }: HeroSe
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [isButtonLoading, setIsButtonLoading] = useState(false);
 
   // Handle client-side mounting
   useEffect(() => {
@@ -73,6 +75,15 @@ const HeroSection = ({ onCitySelect, initialCity, isLoadingDefaultCity }: HeroSe
     setSearchQuery(""); // Clear search query when city is selected
     setIsDropdownOpen(false);
     onCitySelect(city);
+  };
+
+  // Handle explore button click with animation
+  const handleExploreClick = () => {
+    setIsButtonLoading(true);
+    setTimeout(() => {
+      setIsButtonLoading(false);
+      onExploreClick?.();
+    }, 600);
   };
 
   // Don't render interactive elements until mounted to avoid hydration mismatch
@@ -219,17 +230,47 @@ const HeroSection = ({ onCitySelect, initialCity, isLoadingDefaultCity }: HeroSe
 
           {/* CTA Button */}
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            onClick={handleExploreClick}
+            disabled={isButtonLoading || !selectedCity}
+            whileHover={{ scale: isButtonLoading ? 1 : 1.05 }}
+            whileTap={{ scale: isButtonLoading ? 1 : 0.95 }}
             className={cn(
               "group relative overflow-hidden rounded-full px-10 py-4 font-bold text-lg transition-all duration-500",
-              "bg-gradient-to-r from-orange-600 to-amber-500 text-white shadow-xl shadow-orange-500/20 hover:shadow-orange-500/40"
+              "bg-gradient-to-r from-orange-600 to-amber-500 text-white shadow-xl shadow-orange-500/20 hover:shadow-orange-500/40",
+              "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-orange-500/20"
             )}
           >
+            {/* Animated Background */}
             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-in-out" />
+            
+            {/* Ripple Effect */}
+            {isButtonLoading && (
+              <motion.div
+                className="absolute inset-0 bg-white/30 rounded-full"
+                initial={{ scale: 0, opacity: 1 }}
+                animate={{ scale: 2, opacity: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+              />
+            )}
+            
             <span className="relative flex items-center space-x-2">
-              <span className="tracking-wide">Begin The Journey</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              {isButtonLoading ? (
+                <>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                  />
+                  <span className="tracking-wide">Loading...</span>
+                </>
+              ) : (
+                <>
+                  <span className="tracking-wide">
+                    {selectedCity ? `Explore ${selectedCity.name}` : 'Select a City'}
+                  </span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
             </span>
           </motion.button>
         </div>

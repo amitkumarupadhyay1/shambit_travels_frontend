@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import HeroSection from '@/components/home/HeroSection';
@@ -11,10 +12,13 @@ import FeaturedPackagesSection from '@/components/home/FeaturedPackagesSection';
 import LatestArticlesSection from '@/components/home/LatestArticlesSection';
 import BackendStatus from '@/components/common/BackendStatus';
 import { City, apiService } from '@/lib/api';
+import { Loader2 } from 'lucide-react';
 
 export default function Home() {
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [isLoadingDefaultCity, setIsLoadingDefaultCity] = useState(true);
+  const [isLoadingCityContent, setIsLoadingCityContent] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // Load default city on mount
   useEffect(() => {
@@ -36,15 +40,37 @@ export default function Home() {
     loadDefaultCity();
   }, []);
 
+  // Handle city selection with loading animation
+  const handleCitySelect = (city: City | null) => {
+    if (city?.id === selectedCity?.id) return; // Don't reload if same city
+    
+    setIsLoadingCityContent(true);
+    setSelectedCity(city);
+    
+    // Simulate minimum loading time for smooth UX
+    setTimeout(() => {
+      setIsLoadingCityContent(false);
+    }, 800);
+  };
+
+  // Scroll to content sections
+  const scrollToContent = () => {
+    contentRef.current?.scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'start' 
+    });
+  };
+
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen relative">
       <Header />
       
       {/* Hero Section with City Selector */}
       <HeroSection 
-        onCitySelect={setSelectedCity} 
+        onCitySelect={handleCitySelect} 
         initialCity={selectedCity}
         isLoadingDefaultCity={isLoadingDefaultCity}
+        onExploreClick={scrollToContent}
       />
       
       {/* How It Works */}
@@ -53,18 +79,40 @@ export default function Home() {
       {/* Services */}
       <ServicesSection />
       
-      {/* Featured Cities (context-aware) - Only render after default city is loaded */}
-      {!isLoadingDefaultCity && (
-        <>
-          <FeaturedCitiesSection selectedCity={selectedCity} />
-          
-          {/* Featured Packages (context-aware) */}
-          <FeaturedPackagesSection selectedCity={selectedCity} />
-          
-          {/* Latest Articles (context-aware) */}
-          <LatestArticlesSection selectedCity={selectedCity} />
-        </>
-      )}
+      {/* Content Sections with Loading Overlay */}
+      <div ref={contentRef} className="relative">
+        {/* Loading Overlay */}
+        <AnimatePresence>
+          {isLoadingCityContent && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm"
+            >
+              <div className="flex flex-col items-center space-y-4">
+                <Loader2 className="w-12 h-12 text-orange-600 animate-spin" />
+                <p className="text-lg font-semibold text-gray-800">
+                  Loading {selectedCity?.name} content...
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Featured Cities (context-aware) - Only render after default city is loaded */}
+        {!isLoadingDefaultCity && (
+          <>
+            <FeaturedCitiesSection selectedCity={selectedCity} key={`cities-${selectedCity?.id}`} />
+            
+            {/* Featured Packages (context-aware) */}
+            <FeaturedPackagesSection selectedCity={selectedCity} key={`packages-${selectedCity?.id}`} />
+            
+            {/* Latest Articles (context-aware) */}
+            <LatestArticlesSection selectedCity={selectedCity} key={`articles-${selectedCity?.id}`} />
+          </>
+        )}
+      </div>
       
       <Footer />
       
