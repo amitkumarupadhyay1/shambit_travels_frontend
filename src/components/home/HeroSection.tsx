@@ -12,12 +12,14 @@ import Hero from './hero/Hero';
 
 interface HeroSectionProps {
   onCitySelect: (city: City | null) => void;
+  initialCity: City | null;
+  isLoadingDefaultCity: boolean;
 }
 
-const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
+const HeroSection = ({ onCitySelect, initialCity, isLoadingDefaultCity }: HeroSectionProps) => {
   const [cities, setCities] = useState<City[]>([]);
   const [filteredCities, setFilteredCities] = useState<City[]>([]);
-  const [selectedCity, setSelectedCity] = useState<City | null>(null);
+  const [selectedCity, setSelectedCity] = useState<City | null>(initialCity);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -27,6 +29,13 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Sync with parent's initial city
+  useEffect(() => {
+    if (initialCity && !selectedCity) {
+      setSelectedCity(initialCity);
+    }
+  }, [initialCity, selectedCity]);
 
   // Initial Data Fetch
   useEffect(() => {
@@ -45,10 +54,10 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
     fetchCities();
   }, []);
 
-  // Filter cities based on search - limit to 5 initially, show all when searching
+  // Filter cities based on search - limit to 3 initially, show all when searching
   useEffect(() => {
     if (searchQuery.trim() === "") {
-      // Show only first 5 cities when not searching
+      // Show only first 3 cities when not searching
       setFilteredCities(cities.slice(0, 3));
     } else {
       // Show all matching cities when user is typing
@@ -59,18 +68,6 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
     }
   }, [searchQuery, cities]);
 
-  // Set Default "Ayodhya" if available (only once on initial load)
-  useEffect(() => {
-    if (cities.length > 0 && !selectedCity) {
-      const defaultCity = cities.find(c => c.name.toLowerCase() === "ayodhya");
-      if (defaultCity) {
-        setSelectedCity(defaultCity);
-        onCitySelect(defaultCity); // Notify parent component
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cities]); // Only run when cities are loaded
-
   const handleCitySelect = (city: City) => {
     setSelectedCity(city);
     setSearchQuery(""); // Clear search query when city is selected
@@ -79,7 +76,7 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
   };
 
   // Don't render interactive elements until mounted to avoid hydration mismatch
-  if (!mounted) {
+  if (!mounted || isLoadingDefaultCity) {
     return (
       <Hero>
         <div className="flex flex-col items-center justify-center text-center max-w-6xl mx-auto px-4 z-30 relative">
@@ -96,7 +93,7 @@ const HeroSection = ({ onCitySelect }: HeroSectionProps) => {
                   </div>
                   <input
                     type="text"
-                    value=""
+                    value={initialCity?.name || ""}
                     placeholder="Search destinations (e.g. Ayodhya)"
                     className="w-full bg-transparent border-none outline-none focus:outline-none ring-0 focus:ring-0 py-4 px-4 text-gray-800 placeholder:text-gray-400 text-base font-medium leading-relaxed tracking-wide"
                     readOnly
