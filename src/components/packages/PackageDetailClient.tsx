@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Package } from '@/lib/api';
+import { Package, apiService } from '@/lib/api';
 import { cn, sacredStyles } from '@/lib/utils';
 import { MapPin, Calendar, Users, Star } from 'lucide-react';
 import ExperienceSelector from './ExperienceSelector';
 import HotelTierSelector from './HotelTierSelector';
 import TransportSelector from './TransportSelector';
 import PriceCalculator from './PriceCalculator';
+import TrustBadges from '../common/TrustBadges';
+import RecommendationsSection from './RecommendationsSection';
 
 interface PackageDetailClientProps {
   packageData: Package;
@@ -21,6 +23,7 @@ export default function PackageDetailClient({ packageData }: PackageDetailClient
   const [selectedTransport, setSelectedTransport] = useState<number | null>(
     packageData.transport_options[0]?.id || null
   );
+  const [allPackages, setAllPackages] = useState<Package[]>([]);
 
   // Auto-select first 2 experiences as default
   useEffect(() => {
@@ -37,6 +40,19 @@ export default function PackageDetailClient({ packageData }: PackageDetailClient
       return () => clearTimeout(timer);
     }
   }, [packageData.experiences, selectedExperiences.length]);
+
+  // Load all packages for recommendations
+  useEffect(() => {
+    const loadPackages = async () => {
+      try {
+        const packages = await apiService.getPackages();
+        setAllPackages(packages);
+      } catch (error) {
+        console.error('Failed to load packages:', error);
+      }
+    };
+    loadPackages();
+  }, []);
 
   const selections = {
     experiences: selectedExperiences,
@@ -125,6 +141,22 @@ export default function PackageDetailClient({ packageData }: PackageDetailClient
           />
         </div>
       </div>
+
+      {/* Trust Badges */}
+      <div className="mt-16">
+        <TrustBadges variant="compact" />
+      </div>
+
+      {/* Recommendations */}
+      {allPackages.length > 0 && (
+        <div className="mt-16">
+          <RecommendationsSection
+            currentPackage={packageData}
+            allPackages={allPackages}
+            type="similar"
+          />
+        </div>
+      )}
     </div>
   );
 }

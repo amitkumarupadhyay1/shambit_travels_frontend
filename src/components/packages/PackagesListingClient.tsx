@@ -1,18 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Package, City, apiService } from '@/lib/api';
 import { cn, sacredStyles, formatCurrency } from '@/lib/utils';
-import { Search, Filter, Loader2, MapPin, Calendar, GitCompare } from 'lucide-react';
+import { Loader2, MapPin, Calendar, GitCompare } from 'lucide-react';
 import Link from 'next/link';
 import { useComparison } from '@/contexts/ComparisonContext';
+import PackageFilters, { FilterState } from './PackageFilters';
+import SearchBar from './SearchBar';
 
 export default function PackagesListingClient() {
   const [packages, setPackages] = useState<Package[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCity, setSelectedCity] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<FilterState>({
+    cityId: null,
+    priceRange: [0, 100000],
+    minExperiences: 0,
+    sortBy: 'newest',
+  });
 
   // Load packages and cities
   useEffect(() => {
@@ -20,8 +27,8 @@ export default function PackagesListingClient() {
       setLoading(true);
       try {
         const [packagesData, citiesData] = await Promise.all([
-          selectedCity 
-            ? apiService.getPackagesByCity(selectedCity)
+          filters.cityId 
+            ? apiService.getPackagesByCity(filters.cityId)
             : apiService.getPackages(),
           apiService.getCities(),
         ]);
@@ -35,14 +42,66 @@ export default function PackagesListingClient() {
     };
 
     loadData();
-  }, [selectedCity]);
+  }, [filters.cityId]);
 
-  // Filter packages by search query
-  const filteredPackages = packages.filter(pkg =>
-    pkg.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    pkg.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    pkg.city_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter and sort packages
+  const filteredPackages = useMemo(() => {
+    let result = packages;
+
+    // Search filter
+    if (searchQuery) {
+      result = result.filter(pkg =>
+        pkg.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        pkg.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        pkg.city_name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Price range filter
+    result = result.filter(pkg => {
+      if (pkg.experiences.length === 0) return true;
+      const minPrice = Math.min(...pkg.experiences.map(e => e.base_price));
+      return minPrice >= filters.priceRange[0] && minPrice <= filters.priceRange[1];
+    });
+
+    // Minimum experiences filter
+    if (filters.minExperiences > 0) {
+      result = result.filter(pkg => pkg.experiences.length >= filters.minExperiences);
+    }
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      switch (filters.sortBy) {
+        case 'price-asc': {
+          const aMin = a.experiences.length > 0 ? Math.min(...a.experiences.map(e => e.base_price)) : 0;
+          const bMin = b.experiences.length > 0 ? Math.min(...b.experiences.map(e => e.base_price)) : 0;
+          return aMin - bMin;
+        }
+        case 'price-desc': {
+          const aMin = a.experiences.length > 0 ? Math.min(...a.experiences.map(e => e.base_price)) : 0;
+          const bMin = b.experiences.length > 0 ? Math.min(...b.experiences.map(e => e.base_price)) : 0;
+          return bMin - aMin;
+        }
+        case 'experiences':
+          return b.experiences.length - a.experiences.length;
+        case 'newest':
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+    return result;
+  }, [packages, searchQuery, filters]);
+
+  const handleClearFilters = () => {
+    setFilters({
+      cityId: null,
+      priceRange: [0, 100000],
+      minExperiences: 0,
+      sortBy: 'newest',
+    });
+    setSearchQuery('');
+  };
 
   return (
     <div className={cn(sacredStyles.container, "py-24 md:py-32")}>
@@ -56,62 +115,21 @@ export default function PackagesListingClient() {
         </p>
       </div>
 
-      {/* Filters */}
-      <div className="mb-8 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search packages..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-600 focus:outline-none transition-colors"
-            />
-          </div>
-
-          {/* City Filter */}
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <select
-              value={selectedCity || ''}
-              onChange={(e) => setSelectedCity(e.target.value ? Number(e.target.value) : null)}
-              className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-600 focus:outline-none transition-colors appearance-none bg-white"
-            >
-              <option value="">All Cities</option>
-              {cities.map(city => (
-                <option key={city.id} value={city.id}>
-                  {city.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Active Filters */}
-        {(selectedCity || searchQuery) && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm text-gray-600">Active filters:</span>
-            {selectedCity && (
-              <button
-                onClick={() => setSelectedCity(null)}
-                className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm hover:bg-orange-200 transition-colors"
-              >
-                {cities.find(c => c.id === selectedCity)?.name} ✕
-              </button>
-            )}
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm hover:bg-orange-200 transition-colors"
-              >
-                &quot;{searchQuery}&quot; ✕
-              </button>
-            )}
-          </div>
-        )}
+      {/* Search Bar */}
+      <div className="mb-6">
+        <SearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+        />
       </div>
+
+      {/* Filters */}
+      <PackageFilters
+        cities={cities}
+        filters={filters}
+        onChange={setFilters}
+        onClear={handleClearFilters}
+      />
 
       {/* Loading State */}
       {loading && (
@@ -136,10 +154,7 @@ export default function PackagesListingClient() {
             No packages found matching your criteria.
           </p>
           <button
-            onClick={() => {
-              setSelectedCity(null);
-              setSearchQuery('');
-            }}
+            onClick={handleClearFilters}
             className={sacredStyles.button.secondary}
           >
             Clear Filters
