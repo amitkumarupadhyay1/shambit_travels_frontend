@@ -1,3 +1,5 @@
+import { BookingRequest, BookingResponse } from './bookings';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
   (typeof window !== 'undefined' && window.location.hostname.includes('railway.app') 
     ? 'https://shambit.up.railway.app/api' 
@@ -302,6 +304,15 @@ class ApiService {
   // Price Range
   async getPriceRange(slug: string): Promise<PriceRange> {
     return this.fetchApi<PriceRange>(`/packages/packages/${slug}/price_range/`);
+  }
+
+  // Bookings
+  async createBooking(data: BookingRequest): Promise<BookingResponse> {
+    return this.fetchApi<BookingResponse>('/bookings/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      skipCache: true,
+    });
   }
 }
 

@@ -119,6 +119,7 @@ export default function PackageDetailClient({ packageData }: PackageDetailClient
         <div className="lg:col-span-1">
           <PriceCalculator
             packageSlug={packageData.slug}
+            packageData={packageData}
             selections={selections}
             isValid={isValidSelection}
           />

@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PriceCalculation, apiService } from '@/lib/api';
+import { PriceCalculation, apiService, Package } from '@/lib/api';
 import { cn, sacredStyles, formatCurrency } from '@/lib/utils';
 import { Loader2, ShoppingCart, AlertCircle } from 'lucide-react';
+import BookingModal from '../bookings/BookingModal';
+import { useRouter } from 'next/navigation';
 
 interface PriceCalculatorProps {
   packageSlug: string;
+  packageData: Package;
   selections: {
     experiences: number[];
     hotel: number | null;
@@ -17,12 +20,15 @@ interface PriceCalculatorProps {
 
 export default function PriceCalculator({
   packageSlug,
+  packageData,
   selections,
   isValid,
 }: PriceCalculatorProps) {
+  const router = useRouter();
   const [price, setPrice] = useState<PriceCalculation | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showBookingModal, setShowBookingModal] = useState(false);
 
   // Debounce price calculation
   useEffect(() => {
@@ -151,10 +157,7 @@ export default function PriceCalculator({
                 sacredStyles.button.primary,
                 "w-full flex items-center justify-center gap-2"
               )}
-              onClick={() => {
-                // TODO: Implement booking flow
-                alert('Booking flow coming soon!');
-              }}
+              onClick={() => setShowBookingModal(true)}
             >
               <ShoppingCart className="w-5 h-5" />
               Book Now
@@ -169,6 +172,26 @@ export default function PriceCalculator({
           </>
         )}
       </div>
+
+      {/* Booking Modal */}
+      {showBookingModal && price && (
+        <BookingModal
+          isOpen={showBookingModal}
+          onClose={() => setShowBookingModal(false)}
+          packageId={packageData.id}
+          packageName={packageData.name}
+          selections={{
+            experiences: selections.experiences,
+            hotel: selections.hotel!,
+            transport: selections.transport!,
+          }}
+          totalPrice={price.total_price}
+          onBookingComplete={(booking) => {
+            console.log('Booking complete:', booking);
+            router.push(`/bookings/${booking.booking_reference}`);
+          }}
+        />
+      )}
     </div>
   );
 }
