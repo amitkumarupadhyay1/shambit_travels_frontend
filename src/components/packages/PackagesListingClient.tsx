@@ -44,7 +44,7 @@ export default function PackagesListingClient() {
   );
 
   return (
-    <div className={cn(sacredStyles.container, "py-12")}>
+    <div className={cn(sacredStyles.container, "py-24 md:py-32")}>
       {/* Header */}
       <div className="mb-12">
         <h1 className={cn(sacredStyles.heading.h1, "mb-4")}>
