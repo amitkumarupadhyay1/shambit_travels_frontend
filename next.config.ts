@@ -24,16 +24,9 @@ const nextConfig: NextConfig = {
         pathname: '/media/**',
       },
     ],
-    // Allow localhost images in development
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
   },
-  // Disable image optimization for localhost in development
-  ...(process.env.NODE_ENV === 'development' && {
-    images: {
-      unoptimized: true,
-    },
-  }),
 };
 
 export default nextConfig;
