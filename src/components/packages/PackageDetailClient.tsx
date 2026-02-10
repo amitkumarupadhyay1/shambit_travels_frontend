@@ -25,22 +25,6 @@ export default function PackageDetailClient({ packageData }: PackageDetailClient
   );
   const [allPackages, setAllPackages] = useState<Package[]>([]);
 
-  // Auto-select first 2 experiences as default
-  useEffect(() => {
-    if (packageData.experiences.length > 0 && selectedExperiences.length === 0) {
-      const defaultExperiences = packageData.experiences
-        .slice(0, 2)
-        .map(exp => exp.id);
-      
-      // Use a timeout to avoid setState in effect warning
-      const timer = setTimeout(() => {
-        setSelectedExperiences(defaultExperiences);
-      }, 0);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [packageData.experiences, selectedExperiences.length]);
-
   // Load all packages for recommendations
   useEffect(() => {
     const loadPackages = async () => {

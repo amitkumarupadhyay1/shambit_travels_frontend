@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Experience, apiService } from '@/lib/api';
 import { cn, sacredStyles, formatCurrency } from '@/lib/utils';
 import { Loader2, Clock, Users, MapPin, Search } from 'lucide-react';
@@ -134,11 +135,21 @@ interface ExperienceCardProps {
 function ExperienceCard({ experience, onViewDetails }: ExperienceCardProps) {
   return (
     <div className={cn(sacredStyles.card, "group hover:shadow-xl transition-all duration-300")}>
-      {/* Image Placeholder */}
-      <div className="relative h-48 mb-4 rounded-xl overflow-hidden bg-gradient-to-br from-orange-600/20 to-yellow-600/20">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <MapPin className="w-16 h-16 text-orange-600/40" />
-        </div>
+      {/* Image */}
+      <div className="relative h-48 mb-4 rounded-xl overflow-hidden">
+        {experience.featured_image_url ? (
+          <Image
+            src={experience.featured_image_url}
+            alt={`${experience.name} - ${experience.category} experience${experience.city_name ? ` in ${experience.city_name}` : ''}`}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        ) : (
+          <div className="bg-gradient-to-br from-orange-600/20 to-yellow-600/20 h-full flex items-center justify-center">
+            <MapPin className="w-16 h-16 text-orange-600/40" />
+          </div>
+        )}
         
         {/* Price Badge */}
         <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2">
@@ -165,17 +176,18 @@ function ExperienceCard({ experience, onViewDetails }: ExperienceCardProps) {
         <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
           <div className="flex items-center gap-1">
             <Clock className="w-4 h-4" />
-            <span>2-3 hours</span>
+            <span>{experience.duration_hours} hours</span>
           </div>
           <div className="flex items-center gap-1">
             <Users className="w-4 h-4" />
-            <span>Up to 15</span>
+            <span>Up to {experience.max_participants}</span>
           </div>
         </div>
 
         {/* View Details Button */}
         <button
           onClick={onViewDetails}
+          aria-label={`View details for ${experience.name}`}
           className={cn(
             sacredStyles.button.primary,
             "w-full"

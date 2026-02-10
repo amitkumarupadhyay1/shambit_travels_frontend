@@ -1,8 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { BookingRequest } from '@/lib/bookings';
 import { cn, sacredStyles } from '@/lib/utils';
+import { bookingFormSchema, BookingFormData } from '@/lib/validation';
+import ErrorMessage from '@/components/common/ErrorMessage';
 
 interface BookingFormProps {
   packageId: number;
@@ -25,17 +29,37 @@ export default function BookingForm({
 }: BookingFormProps) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    booking_date: '',
-    num_travelers: 1,
-    customer_name: '',
-    customer_email: '',
-    customer_phone: '',
-    special_requests: '',
+
+  // Get minimum date (3 days from now)
+  const getMinDate = () => {
+    const date = new Date();
+    date.setDate(date.getDate() + 3);
+    return date.toISOString().split('T')[0];
+  };
+
+  // React Hook Form with Zod validation
+  const {
+    register,
+    handleSubmit: handleFormSubmit,
+    formState: { errors },
+    watch,
+    trigger,
+  } = useForm<BookingFormData>({
+    resolver: zodResolver(bookingFormSchema),
+    mode: 'onBlur', // Validate on blur for better UX
+    defaultValues: {
+      customer_name: '',
+      customer_email: '',
+      customer_phone: '',
+      travel_date: '',
+      number_of_travelers: 1,
+      special_requests: '',
+    },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const formData = watch();
+
+  const onFormSubmit = async (data: BookingFormData) => {
     setLoading(true);
 
     try {
@@ -44,7 +68,12 @@ export default function BookingForm({
         experience_ids: selections.experiences,
         hotel_tier_id: selections.hotel,
         transport_option_id: selections.transport,
-        ...formData,
+        booking_date: data.travel_date,
+        num_travelers: data.number_of_travelers,
+        customer_name: data.customer_name,
+        customer_email: data.customer_email,
+        customer_phone: data.customer_phone,
+        special_requests: data.special_requests || '',
       });
     } catch (error) {
       console.error('Booking failed:', error);
@@ -54,45 +83,75 @@ export default function BookingForm({
     }
   };
 
+  const handleNextStep = async () => {
+    // Validate current step fields before proceeding
+    if (step === 1) {
+      const isStepValid = await trigger(['travel_date', 'number_of_travelers']);
+      if (isStepValid) {
+        setStep(2);
+      }
+    } else if (step === 2) {
+      const isStepValid = await trigger([
+        'customer_name',
+        'customer_email',
+        'customer_phone',
+      ]);
+      if (isStepValid) {
+        setStep(3);
+      }
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleFormSubmit(onFormSubmit)} className="space-y-6">
       {/* Step 1: Travel Details */}
       {step === 1 && (
         <div className="space-y-4">
           <h3 className={sacredStyles.heading.h4}>Travel Details</h3>
-          
+
           <div>
             <label className="block text-sm font-medium mb-2">
-              Travel Date
+              Travel Date <span className="text-red-500">*</span>
             </label>
             <input
               type="date"
-              required
-              min={new Date().toISOString().split('T')[0]}
-              value={formData.booking_date}
-              onChange={(e) => setFormData({...formData, booking_date: e.target.value})}
-              className="w-full px-4 py-2 border rounded-lg"
+              min={getMinDate()}
+              {...register('travel_date')}
+              className={cn(
+                "w-full px-4 py-2 border rounded-lg transition-colors",
+                errors.travel_date
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-orange-500"
+              )}
             />
+            <ErrorMessage message={errors.travel_date?.message || ''} />
+            <p className="text-xs text-gray-500 mt-1">
+              Minimum 3 days advance booking required
+            </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-2">
-              Number of Travelers
+              Number of Travelers <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
-              required
               min={1}
               max={20}
-              value={formData.num_travelers}
-              onChange={(e) => setFormData({...formData, num_travelers: parseInt(e.target.value)})}
-              className="w-full px-4 py-2 border rounded-lg"
+              {...register('number_of_travelers', { valueAsNumber: true })}
+              className={cn(
+                "w-full px-4 py-2 border rounded-lg transition-colors",
+                errors.number_of_travelers
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-orange-500"
+              )}
             />
+            <ErrorMessage message={errors.number_of_travelers?.message || ''} />
           </div>
 
           <button
             type="button"
-            onClick={() => setStep(2)}
+            onClick={handleNextStep}
             className={cn(sacredStyles.button.primary, "w-full")}
           >
             Continue
@@ -104,44 +163,60 @@ export default function BookingForm({
       {step === 2 && (
         <div className="space-y-4">
           <h3 className={sacredStyles.heading.h4}>Your Information</h3>
-          
+
           <div>
             <label className="block text-sm font-medium mb-2">
-              Full Name
+              Full Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              required
-              value={formData.customer_name}
-              onChange={(e) => setFormData({...formData, customer_name: e.target.value})}
-              className="w-full px-4 py-2 border rounded-lg"
+              {...register('customer_name')}
+              className={cn(
+                "w-full px-4 py-2 border rounded-lg transition-colors",
+                errors.customer_name
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-orange-500"
+              )}
             />
+            <ErrorMessage message={errors.customer_name?.message || ''} />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-2">
-              Email
+              Email <span className="text-red-500">*</span>
             </label>
             <input
               type="email"
-              required
-              value={formData.customer_email}
-              onChange={(e) => setFormData({...formData, customer_email: e.target.value})}
-              className="w-full px-4 py-2 border rounded-lg"
+              {...register('customer_email')}
+              className={cn(
+                "w-full px-4 py-2 border rounded-lg transition-colors",
+                errors.customer_email
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-orange-500"
+              )}
             />
+            <ErrorMessage message={errors.customer_email?.message || ''} />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-2">
-              Phone
+              Phone <span className="text-red-500">*</span>
             </label>
             <input
               type="tel"
-              required
-              value={formData.customer_phone}
-              onChange={(e) => setFormData({...formData, customer_phone: e.target.value})}
-              className="w-full px-4 py-2 border rounded-lg"
+              placeholder="+919876543210"
+              {...register('customer_phone')}
+              className={cn(
+                "w-full px-4 py-2 border rounded-lg transition-colors",
+                errors.customer_phone
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-orange-500"
+              )}
             />
+            <ErrorMessage message={errors.customer_phone?.message || ''} />
+            <p className="text-xs text-gray-500 mt-1">
+              Format: +91XXXXXXXXXX
+            </p>
           </div>
 
           <div>
@@ -149,8 +224,7 @@ export default function BookingForm({
               Special Requests (Optional)
             </label>
             <textarea
-              value={formData.special_requests}
-              onChange={(e) => setFormData({...formData, special_requests: e.target.value})}
+              {...register('special_requests')}
               className="w-full px-4 py-2 border rounded-lg"
               rows={3}
             />
@@ -166,7 +240,7 @@ export default function BookingForm({
             </button>
             <button
               type="button"
-              onClick={() => setStep(3)}
+              onClick={handleNextStep}
               className={cn(sacredStyles.button.primary, "flex-1")}
             >
               Review
@@ -179,10 +253,10 @@ export default function BookingForm({
       {step === 3 && (
         <div className="space-y-4">
           <h3 className={sacredStyles.heading.h4}>Review Booking</h3>
-          
+
           <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-            <p><strong>Date:</strong> {formData.booking_date}</p>
-            <p><strong>Travelers:</strong> {formData.num_travelers}</p>
+            <p><strong>Date:</strong> {formData.travel_date}</p>
+            <p><strong>Travelers:</strong> {formData.number_of_travelers}</p>
             <p><strong>Name:</strong> {formData.customer_name}</p>
             <p><strong>Email:</strong> {formData.customer_email}</p>
             <p><strong>Phone:</strong> {formData.customer_phone}</p>

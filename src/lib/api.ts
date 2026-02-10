@@ -65,7 +65,22 @@ export interface Experience {
   name: string;
   description: string;
   base_price: number;
+  is_active: boolean;
+  featured_image_url: string | null;
+  duration_hours: number;
+  max_participants: number;
+  difficulty_level: "EASY" | "MODERATE" | "HARD";
+  category:
+    | "CULTURAL"
+    | "ADVENTURE"
+    | "FOOD"
+    | "SPIRITUAL"
+    | "NATURE"
+    | "ENTERTAINMENT"
+    | "EDUCATIONAL";
+  city_name: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export interface HotelTier {

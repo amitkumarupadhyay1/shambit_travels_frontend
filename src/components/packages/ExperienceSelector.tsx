@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Experience } from '@/lib/api';
 import { cn, sacredStyles, formatCurrency } from '@/lib/utils';
-import { Check, Info } from 'lucide-react';
+import { Check, Info, AlertCircle } from 'lucide-react';
 import ExperienceDetailModal from './ExperienceDetailModal';
 
 interface ExperienceSelectorProps {
@@ -53,28 +53,92 @@ export default function ExperienceSelector({
     onChange([]);
   };
 
+  // Validation states
+  const MIN_EXPERIENCES = 1;
+  const MAX_EXPERIENCES = 10;
+  const selectedCount = selected.length;
+  const isAtMax = selectedCount >= MAX_EXPERIENCES;
+  const isNearMax = selectedCount >= MAX_EXPERIENCES - 1 && selectedCount < MAX_EXPERIENCES;
+  const hasMinimum = selectedCount >= MIN_EXPERIENCES;
+
   return (
     <div className={sacredStyles.card}>
       <div className="flex items-center justify-between mb-6">
-        <h2 className={sacredStyles.heading.h3}>
-          Select Your Experiences
-        </h2>
-        <div className="flex gap-2">
-          <button
-            onClick={handleSelectAll}
-            className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+        <div>
+          <h2 className={sacredStyles.heading.h3}>
+            Select Your Experiences
+          </h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Choose between {MIN_EXPERIENCES} and {MAX_EXPERIENCES} experiences
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-2">
+          {/* Selection Counter */}
+          <div
+            className={cn(
+              "px-3 py-1 rounded-full text-sm font-medium",
+              isAtMax
+                ? "bg-red-100 text-red-700"
+                : isNearMax
+                  ? "bg-orange-100 text-orange-700"
+                  : hasMinimum
+                    ? "bg-green-100 text-green-700"
+                    : "bg-gray-100 text-gray-700"
+            )}
           >
-            Select All
-          </button>
-          <span className="text-gray-300">|</span>
-          <button
-            onClick={handleClearAll}
-            className="text-sm text-gray-600 hover:text-gray-700 font-medium"
-          >
-            Clear All
-          </button>
+            Selected: {selectedCount}/{MAX_EXPERIENCES}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleSelectAll}
+              disabled={isAtMax}
+              className={cn(
+                "text-sm font-medium",
+                isAtMax
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-orange-600 hover:text-orange-700"
+              )}
+            >
+              Select All
+            </button>
+            <span className="text-gray-300">|</span>
+            <button
+              onClick={handleClearAll}
+              className="text-sm text-gray-600 hover:text-gray-700 font-medium"
+            >
+              Clear All
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Validation Messages */}
+      {!hasMinimum && (
+        <div className="mb-4 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-700">
+            Please select at least {MIN_EXPERIENCES} experience to continue
+          </p>
+        </div>
+      )}
+
+      {isAtMax && (
+        <div className="mb-4 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-700">
+            Maximum {MAX_EXPERIENCES} experiences reached. Deselect an experience to choose another.
+          </p>
+        </div>
+      )}
+
+      {isNearMax && !isAtMax && (
+        <div className="mb-4 flex items-start gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+          <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-orange-700">
+            You can select {MAX_EXPERIENCES - selectedCount} more experience{MAX_EXPERIENCES - selectedCount !== 1 ? 's' : ''}
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {experiences.map(exp => (
@@ -84,6 +148,7 @@ export default function ExperienceSelector({
             selected={selected.includes(exp.id)}
             onToggle={() => handleToggle(exp.id)}
             onViewDetails={(e) => handleViewDetails(exp, e)}
+            disabled={isAtMax && !selected.includes(exp.id)}
           />
         ))}
       </div>
@@ -111,19 +176,24 @@ interface ExperienceCardProps {
   selected: boolean;
   onToggle: () => void;
   onViewDetails: (e: React.MouseEvent) => void;
+  disabled?: boolean;
 }
 
-function ExperienceCard({ experience, selected, onToggle, onViewDetails }: ExperienceCardProps) {
+function ExperienceCard({ experience, selected, onToggle, onViewDetails, disabled = false }: ExperienceCardProps) {
   return (
     <button
       onClick={onToggle}
+      disabled={disabled}
       className={cn(
         "relative p-4 rounded-xl border-2 transition-all duration-200 text-left",
         "hover:shadow-md",
+        disabled && "opacity-50 cursor-not-allowed",
         selected
           ? "border-orange-600 bg-orange-50/50"
           : "border-gray-200 bg-white hover:border-orange-300"
       )}
+      aria-pressed={selected}
+      aria-disabled={disabled}
     >
       {/* Checkbox */}
       <div

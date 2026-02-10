@@ -66,7 +66,7 @@ export default function ExperienceDetailModal({
                 <Clock className="w-5 h-5 text-orange-600 flex-shrink-0" />
                 <div>
                   <p className="text-xs text-gray-600">Duration</p>
-                  <p className="text-sm font-medium">2-3 hours</p>
+                  <p className="text-sm font-medium">{experience.duration_hours} hours</p>
                 </div>
               </div>
               
@@ -74,7 +74,7 @@ export default function ExperienceDetailModal({
                 <Users className="w-5 h-5 text-orange-600 flex-shrink-0" />
                 <div>
                   <p className="text-xs text-gray-600">Group Size</p>
-                  <p className="text-sm font-medium">Up to 15 people</p>
+                  <p className="text-sm font-medium">Up to {experience.max_participants} people</p>
                 </div>
               </div>
               
@@ -82,7 +82,7 @@ export default function ExperienceDetailModal({
                 <MapPin className="w-5 h-5 text-orange-600 flex-shrink-0" />
                 <div>
                   <p className="text-xs text-gray-600">Difficulty</p>
-                  <p className="text-sm font-medium">Easy</p>
+                  <p className="text-sm font-medium">{experience.difficulty_level.charAt(0) + experience.difficulty_level.slice(1).toLowerCase()}</p>
                 </div>
               </div>
             </div>
