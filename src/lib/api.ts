@@ -216,6 +216,8 @@ class ApiService {
         console.log(`📡 Response Status: ${response.status} for ${endpoint}`);
 
         if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error(`❌ API Error Response for ${endpoint}:`, errorData);
           throw new Error(`API Error: ${response.status} ${response.statusText}`);
         }
 
@@ -341,6 +343,7 @@ class ApiService {
 
   // Bookings
   async createBooking(data: BookingRequest): Promise<BookingResponse> {
+    console.log('Creating booking with data:', data);
     return this.fetchApi<BookingResponse>('/bookings/', {
       method: 'POST',
       body: JSON.stringify(data),
