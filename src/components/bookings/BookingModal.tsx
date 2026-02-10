@@ -61,6 +61,12 @@ export default function BookingModal({
         selected_experience_ids: bookingData.experience_ids,
         hotel_tier_id: bookingData.hotel_tier_id,
         transport_option_id: bookingData.transport_option_id,
+        booking_date: bookingData.booking_date,
+        num_travelers: bookingData.num_travelers,
+        customer_name: bookingData.customer_name,
+        customer_email: bookingData.customer_email,
+        customer_phone: bookingData.customer_phone,
+        special_requests: bookingData.special_requests || '',
       };
 
       console.log('Sending booking payload:', bookingPayload);
