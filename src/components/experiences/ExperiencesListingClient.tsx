@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Experience, apiService } from '@/lib/api';
 import { cn, sacredStyles, formatCurrency } from '@/lib/utils';
-import { Clock, Users, MapPin, Search } from 'lucide-react';
+import { Clock, Users, MapPin, Search, X } from 'lucide-react';
 import ExperienceDetailModal from '../packages/ExperienceDetailModal';
 import ExperienceFilters from './ExperienceFilters';
 import ExperienceSort, { SortOption } from './ExperienceSort';
@@ -24,6 +24,7 @@ export default function ExperiencesListingClient() {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
@@ -32,6 +33,15 @@ export default function ExperiencesListingClient() {
     priceRange: [0, 100000],
   });
   const [sortBy, setSortBy] = useState<SortOption>('newest');
+
+  // Debounce search query (300ms delay)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Load sort from URL on mount
   useEffect(() => {
@@ -62,12 +72,14 @@ export default function ExperiencesListingClient() {
   const filteredAndSortedExperiences = useMemo(() => {
     let result = [...experiences];
 
-    // Apply search filter
-    if (searchQuery) {
+    // Apply search filter with debounced query
+    if (debouncedSearchQuery) {
+      const query = debouncedSearchQuery.toLowerCase();
       result = result.filter(
         (exp) =>
-          exp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          exp.description.toLowerCase().includes(searchQuery.toLowerCase())
+          exp.name.toLowerCase().includes(query) ||
+          exp.description.toLowerCase().includes(query) ||
+          exp.city_name?.toLowerCase().includes(query)
       );
     }
 
@@ -121,7 +133,7 @@ export default function ExperiencesListingClient() {
     }
 
     return result;
-  }, [experiences, searchQuery, filters, sortBy]);
+  }, [experiences, debouncedSearchQuery, filters, sortBy]);
 
   const handleViewDetails = (experience: Experience) => {
     setSelectedExperience(experience);
@@ -139,6 +151,57 @@ export default function ExperiencesListingClient() {
 
   const handleSortChange = (newSort: SortOption) => {
     setSortBy(newSort);
+  };
+
+  // Calculate active filter count
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.category.length > 0) count += filters.category.length;
+    if (filters.difficulty.length > 0) count += filters.difficulty.length;
+    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) count += 1;
+    if (debouncedSearchQuery) count += 1;
+    return count;
+  }, [filters, debouncedSearchQuery]);
+
+  // Clear all filters
+  const handleClearAllFilters = useCallback(() => {
+    setSearchQuery('');
+    setDebouncedSearchQuery('');
+    setFilters({ category: [], difficulty: [], priceRange: [0, 100000] });
+  }, []);
+
+  // Remove individual filter
+  const handleRemoveFilter = useCallback((type: string, value?: string) => {
+    if (type === 'search') {
+      setSearchQuery('');
+      setDebouncedSearchQuery('');
+    } else if (type === 'category' && value) {
+      setFilters((prev) => ({
+        ...prev,
+        category: prev.category.filter((c) => c !== value),
+      }));
+    } else if (type === 'difficulty' && value) {
+      setFilters((prev) => ({
+        ...prev,
+        difficulty: prev.difficulty.filter((d) => d !== value),
+      }));
+    } else if (type === 'price') {
+      setFilters((prev) => ({
+        ...prev,
+        priceRange: [0, 100000],
+      }));
+    }
+  }, []);
+
+  // Format filter label
+  const formatFilterLabel = (type: string, value: string) => {
+    if (type === 'category') {
+      return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+    }
+    if (type === 'difficulty') {
+      return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+    }
+    return value;
   };
 
   return (
@@ -162,13 +225,80 @@ export default function ExperiencesListingClient() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search experiences..."
+              placeholder="Search experiences by name, description, or city..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+              aria-label="Search experiences"
             />
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setDebouncedSearchQuery('');
+                }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Clear search"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
+          {searchQuery !== debouncedSearchQuery && (
+            <p className="text-xs text-gray-500 mt-2 ml-1">Searching...</p>
+          )}
         </div>
+
+        {/* Active Filter Chips */}
+        {activeFilterCount > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-medium text-gray-700">Active Filters:</span>
+              
+              {/* Search chip */}
+              {debouncedSearchQuery && (
+                <FilterChip
+                  label={`Search: "${debouncedSearchQuery}"`}
+                  onRemove={() => handleRemoveFilter('search')}
+                />
+              )}
+
+              {/* Category chips */}
+              {filters.category.map((cat) => (
+                <FilterChip
+                  key={cat}
+                  label={formatFilterLabel('category', cat)}
+                  onRemove={() => handleRemoveFilter('category', cat)}
+                />
+              ))}
+
+              {/* Difficulty chips */}
+              {filters.difficulty.map((diff) => (
+                <FilterChip
+                  key={diff}
+                  label={formatFilterLabel('difficulty', diff)}
+                  onRemove={() => handleRemoveFilter('difficulty', diff)}
+                />
+              ))}
+
+              {/* Price range chip */}
+              {(filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) && (
+                <FilterChip
+                  label={`₹${filters.priceRange[0]} - ₹${filters.priceRange[1]}`}
+                  onRemove={() => handleRemoveFilter('price')}
+                />
+              )}
+
+              {/* Clear all button */}
+              <button
+                onClick={handleClearAllFilters}
+                className="text-sm text-orange-600 hover:text-orange-700 font-medium transition-colors ml-2"
+              >
+                Clear All ({activeFilterCount})
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <ExperienceFilters
@@ -197,6 +327,7 @@ export default function ExperiencesListingClient() {
                 key={exp.id}
                 experience={exp}
                 onViewDetails={() => handleViewDetails(exp)}
+                searchQuery={debouncedSearchQuery}
               />
             ))}
           </div>
@@ -205,18 +336,23 @@ export default function ExperiencesListingClient() {
         {/* Empty State */}
         {!loading && filteredAndSortedExperiences.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-gray-500 text-lg mb-4">
-              No experiences found matching your criteria.
-            </p>
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setFilters({ category: [], difficulty: [], priceRange: [0, 100000] });
-              }}
-              className={sacredStyles.button.secondary}
-            >
-              Clear All Filters
-            </button>
+            <div className="mb-6">
+              <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg mb-2">
+                No experiences found matching your criteria.
+              </p>
+              <p className="text-gray-400 text-sm">
+                Try adjusting your filters or search terms
+              </p>
+            </div>
+            {activeFilterCount > 0 && (
+              <button
+                onClick={handleClearAllFilters}
+                className={sacredStyles.button.secondary}
+              >
+                Clear All Filters
+              </button>
+            )}
           </div>
         )}
 
@@ -234,12 +370,49 @@ export default function ExperiencesListingClient() {
   );
 }
 
+// Filter Chip Component
+interface FilterChipProps {
+  label: string;
+  onRemove: () => void;
+}
+
+function FilterChip({ label, onRemove }: FilterChipProps) {
+  return (
+    <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full text-sm font-medium border border-orange-200">
+      <span>{label}</span>
+      <button
+        onClick={onRemove}
+        className="hover:bg-orange-100 rounded-full p-0.5 transition-colors"
+        aria-label={`Remove ${label} filter`}
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
+
 interface ExperienceCardProps {
   experience: Experience;
   onViewDetails: () => void;
+  searchQuery?: string;
 }
 
-function ExperienceCard({ experience, onViewDetails }: ExperienceCardProps) {
+function ExperienceCard({ experience, onViewDetails, searchQuery = '' }: ExperienceCardProps) {
+  // Highlight search terms in text
+  const highlightText = (text: string, query: string) => {
+    if (!query) return text;
+    
+    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    return parts.map((part, index) =>
+      part.toLowerCase() === query.toLowerCase() ? (
+        <mark key={index} className="bg-yellow-200 text-gray-900 px-0.5 rounded">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
+  };
   return (
     <div
       className={cn(
@@ -249,15 +422,17 @@ function ExperienceCard({ experience, onViewDetails }: ExperienceCardProps) {
       )}
     >
       {/* Image */}
-      <div className="relative h-40 sm:h-48 mb-3 sm:mb-4 rounded-xl overflow-hidden">
+      <div className="relative h-40 sm:h-48 mb-3 sm:mb-4 rounded-xl overflow-hidden bg-gray-100">
         {experience.featured_image_url ? (
           <Image
             src={experience.featured_image_url}
             alt={`${experience.name} - ${experience.category} experience${experience.city_name ? ` in ${experience.city_name}` : ''}`}
             fill
-            className="object-cover"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             loading="lazy"
+            placeholder="blur"
+            blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2YzZjRmNiIvPjwvc3ZnPg=="
           />
         ) : (
           <div className="bg-gradient-to-br from-orange-600/20 to-yellow-600/20 h-full flex items-center justify-center">
@@ -282,11 +457,11 @@ function ExperienceCard({ experience, onViewDetails }: ExperienceCardProps) {
             'text-base sm:text-lg' // Smaller on mobile
           )}
         >
-          {experience.name}
+          {highlightText(experience.name, searchQuery)}
         </h3>
 
         <p className={cn(sacredStyles.text.body, 'mb-3 sm:mb-4 line-clamp-2 sm:line-clamp-3 text-sm')}>
-          {experience.description}
+          {highlightText(experience.description, searchQuery)}
         </p>
 
         {/* Quick Info */}
