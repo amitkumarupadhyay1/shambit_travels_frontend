@@ -116,14 +116,19 @@ class AuthService {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    console.log('Auth API request:', { url, method: options?.method || 'GET', body: options?.body });
+
     const response = await fetch(url, {
       ...options,
       headers,
     });
 
+    console.log('Auth API response status:', response.status);
+
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: response.statusText }));
-      throw new Error(error.error || error.detail || `HTTP ${response.status}`);
+      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      console.error('Auth API error response:', errorData);
+      throw new Error(errorData.error || errorData.detail || `HTTP ${response.status}`);
     }
 
     return response.json();
@@ -131,15 +136,22 @@ class AuthService {
 
   // Guest checkout - creates temporary user
   async guestCheckout(data: GuestCheckoutData): Promise<AuthResponse> {
-    const response = await this.fetchApi<AuthResponse>('/auth/guest-checkout/', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    console.log('Guest checkout request data:', data);
+    
+    try {
+      const response = await this.fetchApi<AuthResponse>('/auth/guest-checkout/', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
 
-    this.setTokens(response.access, response.refresh);
-    this.setUser(response.user);
+      this.setTokens(response.access, response.refresh);
+      this.setUser(response.user);
 
-    return response;
+      return response;
+    } catch (error) {
+      console.error('Guest checkout error:', error);
+      throw error;
+    }
   }
 
   // Register new user
