@@ -18,6 +18,7 @@ interface BookingFormProps {
   totalPrice: string;
   onSubmit: (data: BookingRequest) => Promise<void>;
   onCancel: () => void;
+  isProcessing?: boolean;
 }
 
 export default function BookingForm({
@@ -26,6 +27,7 @@ export default function BookingForm({
   totalPrice,
   onSubmit,
   onCancel,
+  isProcessing = false,
 }: BookingFormProps) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -63,6 +65,11 @@ export default function BookingForm({
     setLoading(true);
 
     try {
+      // Split customer name into first and last name for guest checkout
+      const nameParts = data.customer_name.trim().split(' ');
+      const first_name = nameParts[0] || '';
+      const last_name = nameParts.slice(1).join(' ') || '';
+
       await onSubmit({
         package_id: packageId,
         experience_ids: selections.experiences,
@@ -74,10 +81,15 @@ export default function BookingForm({
         customer_email: data.customer_email,
         customer_phone: data.customer_phone,
         special_requests: data.special_requests || '',
+        // Add fields for guest checkout
+        first_name,
+        last_name,
+        email: data.customer_email,
+        phone: data.customer_phone,
       });
     } catch (error) {
       console.error('Booking failed:', error);
-      alert('Booking failed. Please try again.');
+      // Error is handled in parent component
     } finally {
       setLoading(false);
     }
@@ -273,16 +285,16 @@ export default function BookingForm({
               type="button"
               onClick={() => setStep(2)}
               className={cn(sacredStyles.button.secondary, "flex-1")}
-              disabled={loading}
+              disabled={loading || isProcessing}
             >
               Back
             </button>
             <button
               type="submit"
               className={cn(sacredStyles.button.primary, "flex-1")}
-              disabled={loading}
+              disabled={loading || isProcessing}
             >
-              {loading ? 'Processing...' : 'Confirm Booking'}
+              {loading || isProcessing ? 'Processing...' : 'Confirm Booking'}
             </button>
           </div>
         </div>

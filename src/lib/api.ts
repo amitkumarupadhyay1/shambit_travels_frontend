@@ -186,13 +186,31 @@ class ApiService {
 
     const requestPromise = (async () => {
       try {
+        // Get auth token if available
+        const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+        
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+
+        // Add custom headers from options
+        if (options?.headers) {
+          Object.entries(options.headers).forEach(([key, value]) => {
+            if (typeof value === 'string') {
+              headers[key] = value;
+            }
+          });
+        }
+
+        // Add auth header if token exists
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const response = await fetch(url, {
-          headers: {
-            'Content-Type': 'application/json',
-            ...options?.headers,
-          },
-          signal: controller.signal,
           ...options,
+          headers,
+          signal: controller.signal,
         });
 
         console.log(`📡 Response Status: ${response.status} for ${endpoint}`);

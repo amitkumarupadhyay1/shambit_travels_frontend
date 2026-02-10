@@ -11,6 +11,11 @@ export interface BookingRequest {
   customer_email: string;
   customer_phone: string;
   special_requests?: string;
+  // Guest checkout fields (used internally, not sent to API)
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
 }
 
 export interface BookingResponse {
