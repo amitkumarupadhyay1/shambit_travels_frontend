@@ -10,6 +10,8 @@ import ExperienceDetailModal from '../packages/ExperienceDetailModal';
 import ExperienceFilters from './ExperienceFilters';
 import ExperienceSort, { SortOption } from './ExperienceSort';
 import { SkeletonGrid } from '../common/SkeletonCard';
+import { Badge, getExperienceBadge } from '../common/Badge';
+import { EmptyState } from '../common/EmptyState';
 import Header from '../layout/Header';
 import Footer from '../layout/Footer';
 
@@ -363,38 +365,37 @@ export default function ExperiencesListingClient() {
         {/* Experiences Grid */}
         {!loading && !error && filteredAndSortedExperiences.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {filteredAndSortedExperiences.map((exp) => (
-              <ExperienceCard
+            {filteredAndSortedExperiences.map((exp, index) => (
+              <div
                 key={exp.id}
-                experience={exp}
-                onViewDetails={() => handleViewDetails(exp)}
-                searchQuery={debouncedSearchQuery}
-              />
+                className="animate-in fade-in slide-in-from-bottom-4 duration-500"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <ExperienceCard
+                  experience={exp}
+                  onViewDetails={() => handleViewDetails(exp)}
+                  searchQuery={debouncedSearchQuery}
+                />
+              </div>
             ))}
           </div>
         )}
 
         {/* Empty State */}
         {!loading && !error && filteredAndSortedExperiences.length === 0 && (
-          <div className="text-center py-20">
-            <div className="mb-6">
-              <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg mb-2">
-                No experiences found matching your criteria.
-              </p>
-              <p className="text-gray-400 text-sm">
-                Try adjusting your filters or search terms
-              </p>
-            </div>
-            {activeFilterCount > 0 && (
-              <button
-                onClick={handleClearAllFilters}
-                className={sacredStyles.button.secondary}
-              >
-                Clear All Filters
-              </button>
-            )}
-          </div>
+          <EmptyState
+            icon={<Search className="w-10 h-10" />}
+            title="No experiences found"
+            description="We couldn't find any experiences matching your criteria. Try adjusting your filters or search terms."
+            action={
+              activeFilterCount > 0
+                ? {
+                    label: 'Clear All Filters',
+                    onClick: handleClearAllFilters,
+                  }
+                : undefined
+            }
+          />
         )}
 
         {/* Experience Detail Modal */}
@@ -419,11 +420,21 @@ interface FilterChipProps {
 
 const FilterChip = memo(function FilterChip({ label, onRemove }: FilterChipProps) {
   return (
-    <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full text-sm font-medium border border-orange-200">
+    <div className={cn(
+      'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium',
+      'bg-orange-50 text-orange-700 border border-orange-200',
+      'transition-all duration-200 ease-out',
+      'hover:bg-orange-100 hover:border-orange-300 hover:shadow-sm',
+      'animate-in fade-in slide-in-from-left-2 duration-200'
+    )}>
       <span>{label}</span>
       <button
         onClick={onRemove}
-        className="hover:bg-orange-100 rounded-full p-0.5 transition-colors"
+        className={cn(
+          'rounded-full p-0.5 transition-all duration-200',
+          'hover:bg-orange-200 hover:scale-110',
+          'focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1'
+        )}
         aria-label={`Remove ${label} filter`}
       >
         <X className="w-3.5 h-3.5" />
@@ -444,6 +455,8 @@ const ExperienceCard = memo(function ExperienceCard({
   onViewDetails, 
   searchQuery = '' 
 }: ExperienceCardProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  
   // Memoize the highlight function to avoid recreating on every render
   const highlightText = useCallback((text: string, query: string) => {
     if (!query) return text;
@@ -470,13 +483,33 @@ const ExperienceCard = memo(function ExperienceCard({
     () => highlightText(experience.description, searchQuery),
     [experience.description, searchQuery, highlightText]
   );
+
+  // Determine badge type - using getExperienceBadge helper
+  const badgeType = useMemo(() => {
+    return getExperienceBadge(experience);
+  }, [experience]);
   return (
     <div
       className={cn(
         sacredStyles.card,
-        'group hover:shadow-xl transition-all duration-300',
-        'p-4 sm:p-6' // Reduced padding on mobile
+        'group cursor-pointer',
+        'transition-all duration-300 ease-out',
+        'hover:shadow-2xl hover:-translate-y-1',
+        'p-4 sm:p-6',
+        'focus-within:ring-2 focus-within:ring-orange-500 focus-within:ring-offset-2'
       )}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={onViewDetails}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onViewDetails();
+        }
+      }}
+      tabIndex={0}
+      role="button"
+      aria-label={`View details for ${experience.name}`}
     >
       {/* Image */}
       <div className="relative h-40 sm:h-48 mb-3 sm:mb-4 rounded-xl overflow-hidden bg-gray-100">
@@ -485,7 +518,10 @@ const ExperienceCard = memo(function ExperienceCard({
             src={experience.featured_image_url}
             alt={`${experience.name} - ${experience.category} experience${experience.city_name ? ` in ${experience.city_name}` : ''}`}
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className={cn(
+              'object-cover transition-all duration-500 ease-out',
+              isHovered && 'scale-110 brightness-110'
+            )}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             loading="lazy"
             placeholder="blur"
@@ -497,11 +533,34 @@ const ExperienceCard = memo(function ExperienceCard({
           </div>
         )}
 
+        {/* Badge */}
+        {badgeType && (
+          <div className="absolute top-2 sm:top-3 left-2 sm:left-3">
+            <Badge type={badgeType} />
+          </div>
+        )}
+
         {/* Price Badge */}
-        <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-white/90 backdrop-blur-sm rounded-lg px-2 sm:px-3 py-1 sm:py-2">
+        <div className={cn(
+          'absolute top-2 sm:top-3 right-2 sm:right-3',
+          'bg-white/95 backdrop-blur-sm rounded-lg px-2 sm:px-3 py-1 sm:py-2',
+          'shadow-lg transition-all duration-300',
+          isHovered && 'scale-110 shadow-xl'
+        )}>
           <span className="text-base sm:text-lg font-bold text-orange-600">
             {formatCurrency(experience.base_price)}
           </span>
+        </div>
+
+        {/* Hover Overlay */}
+        <div className={cn(
+          'absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent',
+          'transition-opacity duration-300',
+          isHovered ? 'opacity-100' : 'opacity-0'
+        )}>
+          <div className="absolute bottom-3 left-3 right-3 text-white">
+            <p className="text-sm font-medium">Click to view details</p>
+          </div>
         </div>
       </div>
 
@@ -510,8 +569,9 @@ const ExperienceCard = memo(function ExperienceCard({
         <h3
           className={cn(
             sacredStyles.heading.h4,
-            'mb-2 sm:mb-3 group-hover:text-orange-600 transition-colors',
-            'text-base sm:text-lg' // Smaller on mobile
+            'mb-2 sm:mb-3 transition-colors duration-300',
+            'text-base sm:text-lg',
+            isHovered && 'text-orange-600'
           )}
         >
           {highlightedName}
@@ -523,24 +583,30 @@ const ExperienceCard = memo(function ExperienceCard({
 
         {/* Quick Info */}
         <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
-          <div className="flex items-center gap-1">
-            <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+          <div className="flex items-center gap-1" title={`Duration: ${experience.duration_hours} hours`}>
+            <Clock className="w-3 h-3 sm:w-4 sm:h-4" aria-hidden="true" />
             <span>{experience.duration_hours}h</span>
           </div>
-          <div className="flex items-center gap-1">
-            <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+          <div className="flex items-center gap-1" title={`Maximum ${experience.max_participants} participants`}>
+            <Users className="w-3 h-3 sm:w-4 sm:h-4" aria-hidden="true" />
             <span>Up to {experience.max_participants}</span>
           </div>
         </div>
 
-        {/* View Details Button */}
-        <button
-          onClick={onViewDetails}
-          aria-label={`View details for ${experience.name}`}
-          className={cn(sacredStyles.button.primary, 'w-full text-sm sm:text-base py-2 sm:py-3')}
-        >
-          View Details
-        </button>
+        {/* Category & Difficulty */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="inline-flex items-center px-2 py-1 rounded-md bg-orange-50 text-orange-700 text-xs font-medium">
+            {experience.category}
+          </span>
+          <span className={cn(
+            'inline-flex items-center px-2 py-1 rounded-md text-xs font-medium',
+            experience.difficulty_level === 'EASY' && 'bg-green-50 text-green-700',
+            experience.difficulty_level === 'MODERATE' && 'bg-yellow-50 text-yellow-700',
+            experience.difficulty_level === 'HARD' && 'bg-red-50 text-red-700'
+          )}>
+            {experience.difficulty_level}
+          </span>
+        </div>
       </div>
     </div>
   );

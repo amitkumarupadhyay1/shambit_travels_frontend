@@ -56,9 +56,9 @@ export default function BookingModal({
       const { first_name, last_name, email, phone, ...bookingData } = data;
 
       // Transform field names to match backend expectations
-      const bookingPayload = {
+      const bookingPayload: BookingRequest = {
         package_id: bookingData.package_id,
-        selected_experience_ids: bookingData.experience_ids,
+        experience_ids: bookingData.experience_ids,
         hotel_tier_id: bookingData.hotel_tier_id,
         transport_option_id: bookingData.transport_option_id,
         booking_date: bookingData.booking_date,
@@ -72,7 +72,7 @@ export default function BookingModal({
       console.log('Sending booking payload:', bookingPayload);
 
       // Now create the booking with authentication
-      const response = await apiService.createBooking(bookingPayload as any);
+      const response = await apiService.createBooking(bookingPayload);
       onBookingComplete(response);
       onClose();
     } catch (err) {
