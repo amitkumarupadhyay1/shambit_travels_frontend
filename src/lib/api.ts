@@ -21,6 +21,23 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
+export interface ApiError {
+  error: string;
+  detail?: string;
+  status?: number;
+}
+
+export class ApiException extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public detail?: string
+  ) {
+    super(message);
+    this.name = 'ApiException';
+  }
+}
+
 export interface City {
   id: number;
   name: string;
@@ -109,6 +126,8 @@ class ApiService {
   private pendingRequests: Map<string, Promise<unknown>> = new Map();
   private abortControllers: Map<string, AbortController> = new Map();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  private readonly MAX_RETRIES = 3;
+  private readonly RETRY_DELAY = 1000; // 1 second
 
   private getCacheKey(endpoint: string): string {
     return endpoint;
@@ -160,6 +179,40 @@ class ApiService {
     console.log('🚫 All requests cancelled');
   }
 
+  private async sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private isRetryableError(status: number): boolean {
+    // Retry on network errors, server errors, and rate limiting
+    return status >= 500 || status === 429 || status === 408;
+  }
+
+  private getUserFriendlyErrorMessage(status: number, errorData: ApiError): string {
+    switch (status) {
+      case 400:
+        return errorData.error || errorData.detail || 'Invalid request. Please check your input.';
+      case 401:
+        return 'You need to be logged in to perform this action.';
+      case 403:
+        return 'You do not have permission to perform this action.';
+      case 404:
+        return 'The requested resource was not found.';
+      case 408:
+        return 'Request timeout. Please try again.';
+      case 429:
+        return 'Too many requests. Please wait a moment and try again.';
+      case 500:
+        return 'Server error. Our team has been notified. Please try again later.';
+      case 502:
+      case 503:
+      case 504:
+        return 'Service temporarily unavailable. Please try again in a few moments.';
+      default:
+        return errorData.error || errorData.detail || 'An unexpected error occurred. Please try again.';
+    }
+  }
+
   private async fetchApi<T>(endpoint: string, options?: RequestInit & { skipCache?: boolean }): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
     
@@ -185,67 +238,120 @@ class ApiService {
     this.abortControllers.set(endpoint, controller);
 
     const requestPromise = (async () => {
-      try {
-        // Get auth token if available
-        const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-        
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
+      let lastError: Error | null = null;
+      
+      for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
+        try {
+          // Add delay for retries (exponential backoff)
+          if (attempt > 0) {
+            const delay = this.RETRY_DELAY * Math.pow(2, attempt - 1);
+            console.log(`⏳ Retry attempt ${attempt + 1}/${this.MAX_RETRIES} after ${delay}ms for ${endpoint}`);
+            await this.sleep(delay);
+          }
 
-        // Add custom headers from options
-        if (options?.headers) {
-          Object.entries(options.headers).forEach(([key, value]) => {
-            if (typeof value === 'string') {
-              headers[key] = value;
-            }
+          // Get auth token if available
+          const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+          
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+          };
+
+          // Add custom headers from options
+          if (options?.headers) {
+            Object.entries(options.headers).forEach(([key, value]) => {
+              if (typeof value === 'string') {
+                headers[key] = value;
+              }
+            });
+          }
+
+          // Add auth header if token exists
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+
+          const response = await fetch(url, {
+            ...options,
+            headers,
+            signal: controller.signal,
           });
+
+          console.log(`📡 Response Status: ${response.status} for ${endpoint}`);
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' })) as ApiError;
+            console.error(`❌ API Error Response for ${endpoint}:`, errorData);
+            
+            // Check if we should retry
+            if (this.isRetryableError(response.status) && attempt < this.MAX_RETRIES - 1) {
+              lastError = new ApiException(
+                this.getUserFriendlyErrorMessage(response.status, errorData),
+                response.status,
+                errorData.detail
+              );
+              continue; // Retry
+            }
+            
+            // No retry, throw user-friendly error
+            throw new ApiException(
+              this.getUserFriendlyErrorMessage(response.status, errorData),
+              response.status,
+              errorData.detail
+            );
+          }
+
+          const data = await response.json();
+          console.log(`✅ Data received for ${endpoint}:`, data);
+          
+          // Cache the response
+          this.setCache(endpoint, data);
+          
+          return data;
+        } catch (error) {
+          if (error instanceof Error && error.name === 'AbortError') {
+            console.log(`🚫 Request aborted for ${endpoint}`);
+            throw error;
+          }
+          
+          // If it's already an ApiException, just store it
+          if (error instanceof ApiException) {
+            lastError = error;
+            
+            // Don't retry if it's not a retryable error
+            if (!this.isRetryableError(error.status)) {
+              throw error;
+            }
+          } else {
+            // Network error or other error
+            lastError = new Error(
+              error instanceof Error 
+                ? `Network error: ${error.message}` 
+                : 'An unexpected error occurred'
+            );
+          }
+          
+          // If this was the last attempt, throw the error
+          if (attempt === this.MAX_RETRIES - 1) {
+            console.error(`❌ API call failed after ${this.MAX_RETRIES} attempts for ${endpoint}:`, lastError);
+            throw lastError;
+          }
         }
-
-        // Add auth header if token exists
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
-
-        const response = await fetch(url, {
-          ...options,
-          headers,
-          signal: controller.signal,
-        });
-
-        console.log(`📡 Response Status: ${response.status} for ${endpoint}`);
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.error(`❌ API Error Response for ${endpoint}:`, errorData);
-          throw new Error(`API Error: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log(`✅ Data received for ${endpoint}:`, data);
-        
-        // Cache the response
-        this.setCache(endpoint, data);
-        
-        return data;
-      } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
-          console.log(`🚫 Request aborted for ${endpoint}`);
-          throw error;
-        }
-        console.error(`❌ API call failed for ${endpoint}:`, error);
-        throw error;
-      } finally {
-        // Clean up
-        this.abortControllers.delete(endpoint);
-        this.pendingRequests.delete(endpoint);
       }
+      
+      // This should never be reached, but TypeScript needs it
+      throw lastError || new Error('Request failed');
     })();
 
     // Store the pending request
     this.pendingRequests.set(endpoint, requestPromise);
 
-    return requestPromise as Promise<T>;
+    try {
+      return await requestPromise as Promise<T>;
+    } finally {
+      // Clean up
+      this.abortControllers.delete(endpoint);
+      this.pendingRequests.delete(endpoint);
+    }
   }
 
   // Cities

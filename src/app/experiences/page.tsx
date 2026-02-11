@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { Suspense } from 'react';
 import ExperiencesListingClient from '@/components/experiences/ExperiencesListingClient';
 import { SkeletonGrid } from '@/components/common/SkeletonCard';
+import ErrorBoundary from '@/components/common/ErrorBoundary';
 
 export const metadata: Metadata = {
   title: 'Browse Experiences | ShamBit',
@@ -10,8 +11,10 @@ export const metadata: Metadata = {
 
 export default function ExperiencesPage() {
   return (
-    <Suspense fallback={<SkeletonGrid count={6} />}>
-      <ExperiencesListingClient />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<SkeletonGrid count={6} />}>
+        <ExperiencesListingClient />
+      </Suspense>
+    </ErrorBoundary>
   );
 }

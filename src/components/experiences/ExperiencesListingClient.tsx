@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Experience, apiService } from '@/lib/api';
@@ -23,6 +23,7 @@ export default function ExperiencesListingClient() {
   const searchParams = useSearchParams();
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
@@ -55,11 +56,16 @@ export default function ExperiencesListingClient() {
   useEffect(() => {
     const loadExperiences = async () => {
       setLoading(true);
+      setError(null);
       try {
         const data = await apiService.getExperiences();
         setExperiences(data);
-      } catch (error) {
-        console.error('Failed to load experiences:', error);
+      } catch (err) {
+        console.error('Failed to load experiences:', err);
+        const errorMessage = err instanceof Error 
+          ? err.message 
+          : 'Failed to load experiences. Please try again.';
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -319,8 +325,43 @@ export default function ExperiencesListingClient() {
         {/* Loading State */}
         {loading && <SkeletonGrid count={6} />}
 
+        {/* Error State */}
+        {!loading && error && (
+          <div className="text-center py-20">
+            <div className={cn(sacredStyles.card, 'max-w-md mx-auto')}>
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-8 h-8 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <h3 className={cn(sacredStyles.heading.h4, 'mb-3')}>
+                Unable to Load Experiences
+              </h3>
+              <p className={cn(sacredStyles.text.body, 'mb-6 text-gray-600')}>
+                {error}
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className={sacredStyles.button.primary}
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Experiences Grid */}
-        {!loading && filteredAndSortedExperiences.length > 0 && (
+        {!loading && !error && filteredAndSortedExperiences.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredAndSortedExperiences.map((exp) => (
               <ExperienceCard
@@ -334,7 +375,7 @@ export default function ExperiencesListingClient() {
         )}
 
         {/* Empty State */}
-        {!loading && filteredAndSortedExperiences.length === 0 && (
+        {!loading && !error && filteredAndSortedExperiences.length === 0 && (
           <div className="text-center py-20">
             <div className="mb-6">
               <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -370,13 +411,13 @@ export default function ExperiencesListingClient() {
   );
 }
 
-// Filter Chip Component
+// Filter Chip Component - Memoized for performance
 interface FilterChipProps {
   label: string;
   onRemove: () => void;
 }
 
-function FilterChip({ label, onRemove }: FilterChipProps) {
+const FilterChip = memo(function FilterChip({ label, onRemove }: FilterChipProps) {
   return (
     <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full text-sm font-medium border border-orange-200">
       <span>{label}</span>
@@ -389,7 +430,7 @@ function FilterChip({ label, onRemove }: FilterChipProps) {
       </button>
     </div>
   );
-}
+});
 
 interface ExperienceCardProps {
   experience: Experience;
@@ -397,9 +438,14 @@ interface ExperienceCardProps {
   searchQuery?: string;
 }
 
-function ExperienceCard({ experience, onViewDetails, searchQuery = '' }: ExperienceCardProps) {
-  // Highlight search terms in text
-  const highlightText = (text: string, query: string) => {
+// Memoized ExperienceCard to prevent unnecessary re-renders
+const ExperienceCard = memo(function ExperienceCard({ 
+  experience, 
+  onViewDetails, 
+  searchQuery = '' 
+}: ExperienceCardProps) {
+  // Memoize the highlight function to avoid recreating on every render
+  const highlightText = useCallback((text: string, query: string) => {
     if (!query) return text;
     
     const parts = text.split(new RegExp(`(${query})`, 'gi'));
@@ -412,7 +458,18 @@ function ExperienceCard({ experience, onViewDetails, searchQuery = '' }: Experie
         part
       )
     );
-  };
+  }, []);
+
+  // Memoize the highlighted name and description
+  const highlightedName = useMemo(
+    () => highlightText(experience.name, searchQuery),
+    [experience.name, searchQuery, highlightText]
+  );
+
+  const highlightedDescription = useMemo(
+    () => highlightText(experience.description, searchQuery),
+    [experience.description, searchQuery, highlightText]
+  );
   return (
     <div
       className={cn(
@@ -457,11 +514,11 @@ function ExperienceCard({ experience, onViewDetails, searchQuery = '' }: Experie
             'text-base sm:text-lg' // Smaller on mobile
           )}
         >
-          {highlightText(experience.name, searchQuery)}
+          {highlightedName}
         </h3>
 
         <p className={cn(sacredStyles.text.body, 'mb-3 sm:mb-4 line-clamp-2 sm:line-clamp-3 text-sm')}>
-          {highlightText(experience.description, searchQuery)}
+          {highlightedDescription}
         </p>
 
         {/* Quick Info */}
@@ -487,4 +544,7 @@ function ExperienceCard({ experience, onViewDetails, searchQuery = '' }: Experie
       </div>
     </div>
   );
-}
+});
+
+// Add display name for better debugging
+ExperienceCard.displayName = 'ExperienceCard';
