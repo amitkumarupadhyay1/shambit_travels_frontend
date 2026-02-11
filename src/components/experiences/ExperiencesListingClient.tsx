@@ -405,6 +405,7 @@ export default function ExperiencesListingClient() {
           onClose={handleCloseModal}
           onToggle={() => {}} // No selection functionality on standalone page
           isSelected={false}
+          isStandalone={true} // This is the standalone experiences page
         />
       </div>
       <Footer />

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Experience } from '@/lib/api';
 import { cn, sacredStyles, formatCurrency } from '@/lib/utils';
 import { X, Check, Clock, Users, MapPin, AlertCircle } from 'lucide-react';
@@ -10,6 +11,7 @@ interface ExperienceDetailModalProps {
   onClose: () => void;
   onToggle: () => void;
   isSelected: boolean;
+  isStandalone?: boolean; // New prop to indicate standalone mode
 }
 
 export default function ExperienceDetailModal({
@@ -18,6 +20,7 @@ export default function ExperienceDetailModal({
   onClose,
   onToggle,
   isSelected,
+  isStandalone = false,
 }: ExperienceDetailModalProps) {
   if (!experience || !isOpen) return null;
 
@@ -60,6 +63,23 @@ export default function ExperienceDetailModal({
           
           {/* Content */}
           <div className="px-6 py-6 space-y-6">
+            {/* Info Banner for Standalone Mode */}
+            {isStandalone && (
+              <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold text-orange-900 mb-1">
+                      Want to book this experience?
+                    </h4>
+                    <p className="text-sm text-orange-800">
+                      This experience is part of our curated travel packages. Visit our packages page to build your custom itinerary and book your journey.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* Quick Info */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
@@ -174,17 +194,32 @@ export default function ExperienceDetailModal({
                   {formatCurrency(experience.base_price)}
                 </p>
               </div>
-              <button
-                onClick={handleToggle}
-                className={cn(
-                  "px-8 py-3 rounded-lg font-semibold transition-colors",
-                  isSelected
-                    ? "bg-red-600 hover:bg-red-700 text-white"
-                    : "bg-orange-600 hover:bg-orange-700 text-white"
-                )}
-              >
-                {isSelected ? 'Remove from Package' : 'Add to Package'}
-              </button>
+              
+              {isStandalone ? (
+                // Standalone mode - show "View Packages" button
+                <Link
+                  href="/packages"
+                  className={cn(
+                    "px-8 py-3 rounded-lg font-semibold transition-colors",
+                    "bg-orange-600 hover:bg-orange-700 text-white inline-block text-center"
+                  )}
+                >
+                  View Packages
+                </Link>
+              ) : (
+                // Package builder mode - show "Add to Package" button
+                <button
+                  onClick={handleToggle}
+                  className={cn(
+                    "px-8 py-3 rounded-lg font-semibold transition-colors",
+                    isSelected
+                      ? "bg-red-600 hover:bg-red-700 text-white"
+                      : "bg-orange-600 hover:bg-orange-700 text-white"
+                  )}
+                >
+                  {isSelected ? 'Remove from Package' : 'Add to Package'}
+                </button>
+              )}
             </div>
           </div>
         </div>
