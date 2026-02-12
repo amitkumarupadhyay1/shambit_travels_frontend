@@ -50,7 +50,7 @@ export default function PackageDetailClient({ packageData }: PackageDetailClient
     selectedTransport !== null;
 
   return (
-    <div className={cn(sacredStyles.container, "py-24 md:py-32")}>
+    <div className={cn(sacredStyles.container, "pt-32 pb-24 md:pt-40 md:pb-32")}>
       {/* Package Header */}
       <div className="mb-12">
         <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
