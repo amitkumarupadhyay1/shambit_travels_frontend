@@ -78,15 +78,18 @@ const Header = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="lg:hidden mt-4 pt-4 border-t border-gray-100"
+              className="lg:hidden mt-4 pt-4 border-t border-gray-100 overflow-hidden"
             >
-              <nav className="flex flex-col space-y-4">
+              <nav className="flex flex-col space-y-4 pb-4">
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="text-gray-700 hover:text-orange-600 transition-colors py-2"
-                    onClick={() => setIsMenuOpen(false)}
+                    className="text-gray-700 hover:text-orange-600 transition-colors py-2 block"
+                    onClick={() => {
+                      // Allow navigation to complete before closing menu
+                      setTimeout(() => setIsMenuOpen(false), 100);
+                    }}
                   >
                     {item.name}
                   </Link>
@@ -94,7 +97,10 @@ const Header = () => {
                 <Link
                   href="/login"
                   className="flex items-center space-x-2 text-slate-900 hover:text-orange-600 transition-colors py-2"
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={() => {
+                    // Allow navigation to complete before closing menu
+                    setTimeout(() => setIsMenuOpen(false), 100);
+                  }}
                 >
                   <User className="w-5 h-5" />
                   <span>Login</span>
