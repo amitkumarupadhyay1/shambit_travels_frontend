@@ -23,6 +23,11 @@ const nextConfig: NextConfig = {
         hostname: 'shambit.up.railway.app',
         pathname: '/media/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
     ],
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',

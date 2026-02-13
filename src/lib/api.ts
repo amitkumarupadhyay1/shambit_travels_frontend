@@ -1,9 +1,36 @@
 import { BookingRequest, BookingResponse } from './bookings';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
-  (typeof window !== 'undefined' && window.location.hostname.includes('railway.app') 
-    ? 'https://shambit.up.railway.app/api' 
-    : 'http://localhost:8000/api');
+// Determine API base URL with smart fallback for local network access
+const getApiBaseUrl = (): string => {
+  // If explicitly set, use it
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  
+  // Server-side rendering: use localhost
+  if (typeof window === 'undefined') {
+    return 'http://localhost:8000/api';
+  }
+  
+  // Client-side: detect environment
+  const hostname = window.location.hostname;
+  
+  // Production (Railway)
+  if (hostname.includes('railway.app') || hostname.includes('vercel.app')) {
+    return 'https://shambit.up.railway.app/api';
+  }
+  
+  // Local network access (mobile testing)
+  // If accessing via IP address (e.g., 192.168.x.x), use the same IP for backend
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+    return `http://${hostname}:8000/api`;
+  }
+  
+  // Default: localhost
+  return 'http://localhost:8000/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Debug logging
 if (typeof window !== 'undefined') {

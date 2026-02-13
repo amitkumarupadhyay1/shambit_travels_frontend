@@ -48,11 +48,31 @@ export function getImageUrl(imagePath?: string): string | undefined {
     return imagePath;
   }
   
-  // Get the backend base URL
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 
-    (typeof window !== 'undefined' && window.location.hostname.includes('railway.app') 
-      ? 'https://shambit.up.railway.app' 
-      : 'http://localhost:8000');
+  // Smart backend URL detection for mobile compatibility
+  const getBackendUrl = (): string => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (apiUrl) {
+      return apiUrl.replace('/api', '');
+    }
+    
+    if (typeof window === 'undefined') {
+      return 'http://localhost:8000';
+    }
+    
+    const hostname = window.location.hostname;
+    
+    if (hostname.includes('railway.app') || hostname.includes('vercel.app')) {
+      return 'https://shambit.up.railway.app';
+    }
+    
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+      return `http://${hostname}:8000`;
+    }
+    
+    return 'http://localhost:8000';
+  };
+  
+  const backendUrl = getBackendUrl();
   
   // Ensure the path starts with /
   const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;

@@ -8,13 +8,35 @@ const BackendStatus = () => {
   const [status, setStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
 
+  const getApiUrl = useCallback(() => {
+    if (process.env.NEXT_PUBLIC_API_URL) {
+      return process.env.NEXT_PUBLIC_API_URL;
+    }
+    
+    const hostname = window.location.hostname;
+    
+    // Production
+    if (hostname.includes('railway.app') || hostname.includes('vercel.app')) {
+      return 'https://shambit.up.railway.app/api';
+    }
+    
+    // Local network access (mobile testing)
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+      return `http://${hostname}:8000/api`;
+    }
+    
+    // Default: localhost
+    return 'http://localhost:8000/api';
+  }, []);
+
   const checkBackendStatus = useCallback(async () => {
     setStatus('checking');
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/cities/`, {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/cities/`, {
         method: 'HEAD',
         signal: controller.signal,
       });
@@ -30,7 +52,7 @@ const BackendStatus = () => {
       setStatus('disconnected');
     }
     setLastChecked(new Date());
-  }, []);
+  }, [getApiUrl]);
 
   useEffect(() => {
     let mounted = true;

@@ -6,7 +6,30 @@
  * Customers cannot upload media from frontend (per requirement #14)
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// Smart API URL detection for mobile compatibility
+const getApiBaseUrl = (): string => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace('/api', '');
+  }
+  
+  if (typeof window === 'undefined') {
+    return 'http://localhost:8000';
+  }
+  
+  const hostname = window.location.hostname;
+  
+  if (hostname.includes('railway.app') || hostname.includes('vercel.app')) {
+    return 'https://shambit.up.railway.app';
+  }
+  
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+    return `http://${hostname}:8000`;
+  }
+  
+  return 'http://localhost:8000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface Media {
   id: number;

@@ -1,9 +1,29 @@
 // Authentication service for JWT-based auth
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
-  (typeof window !== 'undefined' && window.location.hostname.includes('railway.app') 
-    ? 'https://shambit.up.railway.app/api' 
-    : 'http://localhost:8000/api');
+// Smart API URL detection for mobile compatibility
+const getApiBaseUrl = (): string => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  
+  if (typeof window === 'undefined') {
+    return 'http://localhost:8000/api';
+  }
+  
+  const hostname = window.location.hostname;
+  
+  if (hostname.includes('railway.app') || hostname.includes('vercel.app')) {
+    return 'https://shambit.up.railway.app/api';
+  }
+  
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+    return `http://${hostname}:8000/api`;
+  }
+  
+  return 'http://localhost:8000/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface User {
   id: number;
