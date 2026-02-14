@@ -6,10 +6,10 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useRouter } from "next/navigation"
 import axios from "axios"
-import { Loader2, Mail, AlertCircle, CheckCircle } from "lucide-react"
+import { Loader2, Phone, AlertCircle, CheckCircle } from "lucide-react"
 
 const forgotPasswordSchema = z.object({
-    email: z.string().email("Invalid email address"),
+    phone: z.string().min(10, "Phone number must be at least 10 digits").regex(/^[0-9+]{10,13}$/, "Invalid phone number format"),
 })
 
 export default function ForgotPasswordForm() {
@@ -31,7 +31,7 @@ export default function ForgotPasswordForm() {
             const response = await axios.post(
                 `${process.env.NEXT_PUBLIC_API_URL}/auth/forgot-password/`, 
                 {
-                    email: data.email,
+                    phone: data.phone,
                 },
                 {
                     timeout: 30000, // 30 second timeout
@@ -43,7 +43,7 @@ export default function ForgotPasswordForm() {
             
             // Redirect to reset password page after 2 seconds
             setTimeout(() => {
-                router.push(`/reset-password?email=${encodeURIComponent(data.email)}`)
+                router.push(`/reset-password?phone=${encodeURIComponent(data.phone)}`)
             }, 2000)
         } catch (err: unknown) {
             console.error('Forgot Password Error:', err)
@@ -61,7 +61,9 @@ export default function ForgotPasswordForm() {
             } else if (e.response) {
                 const errorData = e.response.data
                 if (e.response.status === 404) {
-                    setError("No account found with this email address")
+                    setError("No account found with this phone number")
+                } else if (e.response.status === 500) {
+                    setError("Failed to send SMS. Please try again or contact support.")
                 } else {
                     setError(errorData?.error || errorData?.detail || "Failed to send reset code. Please try again.")
                 }
@@ -80,7 +82,7 @@ export default function ForgotPasswordForm() {
                     Forgot Password
                 </h2>
                 <p className="text-sm text-gray-500 mt-2">
-                    Enter your email address and we&apos;ll send you a code to reset your password
+                    Enter your phone number and we&apos;ll send you an OTP via SMS to reset your password
                 </p>
             </div>
 
@@ -94,26 +96,29 @@ export default function ForgotPasswordForm() {
             {success && (
                 <div className="p-3 text-sm text-green-600 bg-green-50 rounded-lg flex items-center">
                     <CheckCircle className="w-4 h-4 mr-2 flex-shrink-0" />
-                    Reset code sent! Redirecting to reset password page...
+                    OTP sent to your phone! Redirecting to reset password page...
                 </div>
             )}
 
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Email Address</label>
+                    <label className="text-sm font-medium text-gray-700">Phone Number</label>
                     <div className="relative">
-                        <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                        <Phone className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                         <input
-                            {...form.register("email")}
-                            type="email"
-                            placeholder="you@example.com"
+                            {...form.register("phone")}
+                            type="tel"
+                            placeholder="+919876543210 or 9876543210"
                             disabled={success}
                             className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
                         />
                     </div>
-                    {form.formState.errors.email && (
-                        <p className="text-xs text-red-500">{form.formState.errors.email.message}</p>
+                    {form.formState.errors.phone && (
+                        <p className="text-xs text-red-500">{form.formState.errors.phone.message}</p>
                     )}
+                    <p className="text-xs text-gray-500">
+                        Enter your 10-digit phone number (with or without +91)
+                    </p>
                 </div>
 
                 <button
@@ -124,9 +129,9 @@ export default function ForgotPasswordForm() {
                     {loading ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
                     ) : success ? (
-                        "Code Sent!"
+                        "OTP Sent!"
                     ) : (
-                        "Send Reset Code"
+                        "Send OTP via SMS"
                     )}
                 </button>
             </form>

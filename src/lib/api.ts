@@ -384,54 +384,78 @@ class ApiService {
 
   // Cities
   async getCities(): Promise<City[]> {
-    const response = await this.fetchApi<PaginatedResponse<City>>('/cities/');
+    const response = await this.fetchApi<PaginatedResponse<City>>('/cities/', {
+      skipCache: true,
+    });
     return response.results;
   }
 
   async getCity(id: number): Promise<City> {
-    return this.fetchApi<City>(`/cities/${id}/`);
+    return this.fetchApi<City>(`/cities/${id}/`, { skipCache: true });
   }
 
   // Articles
   async getArticles(): Promise<Article[]> {
-    const response = await this.fetchApi<PaginatedResponse<Article>>('/articles/');
+    const response = await this.fetchApi<PaginatedResponse<Article>>('/articles/', {
+      skipCache: true,
+    });
     return response.results;
   }
 
   async getFeaturedArticles(): Promise<Article[]> {
-    const response = await this.fetchApi<PaginatedResponse<Article>>('/articles/');
+    const response = await this.fetchApi<PaginatedResponse<Article>>('/articles/', {
+      skipCache: true,
+    });
     return response.results;
   }
 
   async getArticlesByCity(cityId: number): Promise<Article[]> {
-    const response = await this.fetchApi<PaginatedResponse<Article>>(`/articles/?city=${cityId}`);
+    const response = await this.fetchApi<PaginatedResponse<Article>>(
+      `/articles/?city=${cityId}`,
+      { skipCache: true }
+    );
     return response.results;
   }
 
   // Packages
   async getPackages(): Promise<Package[]> {
-    const response = await this.fetchApi<PaginatedResponse<Package>>('/packages/packages/');
+    const response = await this.fetchApi<PaginatedResponse<Package>>(
+      '/packages/packages/',
+      { skipCache: true }
+    );
     return response.results;
   }
 
   async getFeaturedPackages(): Promise<Package[]> {
-    const response = await this.fetchApi<PaginatedResponse<Package>>('/packages/packages/');
+    const response = await this.fetchApi<PaginatedResponse<Package>>(
+      '/packages/packages/',
+      { skipCache: true }
+    );
     return response.results;
   }
 
   async getPackagesByCity(cityId: number): Promise<Package[]> {
-    const response = await this.fetchApi<PaginatedResponse<Package>>(`/packages/packages/?city=${cityId}`);
+    const response = await this.fetchApi<PaginatedResponse<Package>>(
+      `/packages/packages/?city=${cityId}`,
+      { skipCache: true }
+    );
     return response.results;
   }
 
   // Experiences
   async getExperiences(): Promise<Experience[]> {
-    const response = await this.fetchApi<PaginatedResponse<Experience>>('/packages/experiences/');
+    const response = await this.fetchApi<PaginatedResponse<Experience>>(
+      '/packages/experiences/',
+      { skipCache: true }
+    );
     return response.results;
   }
 
   async getExperiencesByCity(cityId: number): Promise<Experience[]> {
-    const response = await this.fetchApi<PaginatedResponse<Experience>>(`/packages/experiences/?city=${cityId}`);
+    const response = await this.fetchApi<PaginatedResponse<Experience>>(
+      `/packages/experiences/?city=${cityId}`,
+      { skipCache: true }
+    );
     return response.results;
   }
 
@@ -448,7 +472,9 @@ class ApiService {
 
   // Package Detail
   async getPackage(slug: string): Promise<Package> {
-    return this.fetchApi<Package>(`/packages/packages/${slug}/`);
+    return this.fetchApi<Package>(`/packages/packages/${slug}/`, {
+      skipCache: true,
+    });
   }
 
   // Price Calculation

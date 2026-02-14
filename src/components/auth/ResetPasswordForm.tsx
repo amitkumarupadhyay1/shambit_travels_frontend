@@ -6,11 +6,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useRouter, useSearchParams } from "next/navigation"
 import axios from "axios"
-import { Loader2, Mail, Lock, AlertCircle, CheckCircle, Key } from "lucide-react"
+import { Loader2, Phone, Lock, AlertCircle, CheckCircle, Key } from "lucide-react"
 import PasswordStrengthMeter from "./PasswordStrengthMeter"
 
 const resetPasswordSchema = z.object({
-    email: z.string().email("Invalid email address"),
+    phone: z.string().min(10, "Phone number must be at least 10 digits").regex(/^[0-9+]{10,13}$/, "Invalid phone number format"),
     otp: z.string().length(6, "OTP must be 6 digits").regex(/^\d+$/, "OTP must contain only numbers"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     password_confirm: z.string(),
@@ -26,12 +26,12 @@ function ResetPasswordFormContent() {
     const [showPassword, setShowPassword] = useState(false)
     const router = useRouter()
     const searchParams = useSearchParams()
-    const emailFromUrl = searchParams.get("email") || ""
+    const phoneFromUrl = searchParams.get("phone") || ""
 
     const form = useForm<z.infer<typeof resetPasswordSchema>>({
         resolver: zodResolver(resetPasswordSchema),
         defaultValues: {
-            email: emailFromUrl,
+            phone: phoneFromUrl,
             otp: "",
             password: "",
             password_confirm: "",
@@ -47,7 +47,7 @@ function ResetPasswordFormContent() {
 
         try {
             await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/reset-password/`, {
-                email: data.email,
+                phone: data.phone,
                 otp: data.otp,
                 password: data.password,
                 password_confirm: data.password_confirm,
@@ -66,7 +66,7 @@ function ResetPasswordFormContent() {
                 if (e.response.status === 400) {
                     setError(errorData?.error || "Invalid or expired OTP. Please try again.")
                 } else if (e.response.status === 404) {
-                    setError("User not found. Please check your email address.")
+                    setError("User not found. Please check your phone number.")
                 } else {
                     setError(errorData?.error || errorData?.detail || "Failed to reset password. Please try again.")
                 }
@@ -79,9 +79,9 @@ function ResetPasswordFormContent() {
     }
 
     const handleResendOTP = async () => {
-        const email = form.getValues("email")
-        if (!email) {
-            setError("Please enter your email address")
+        const phone = form.getValues("phone")
+        if (!phone) {
+            setError("Please enter your phone number")
             return
         }
 
@@ -90,16 +90,16 @@ function ResetPasswordFormContent() {
 
         try {
             await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/forgot-password/`, {
-                email: email,
+                phone: phone,
             })
             setError("") // Clear any previous errors
             // Show success in a non-intrusive way
             form.setError("otp", { 
                 type: "manual", 
-                message: "New code sent to your email" 
+                message: "New OTP sent to your phone" 
             })
         } catch {
-            setError("Failed to resend code. Please try again.")
+            setError("Failed to resend OTP. Please try again.")
         } finally {
             setLoading(false)
         }
@@ -112,7 +112,7 @@ function ResetPasswordFormContent() {
                     Reset Password
                 </h2>
                 <p className="text-sm text-gray-500 mt-2">
-                    Enter the code sent to your email and create a new password
+                    Enter the OTP sent to your phone and create a new password
                 </p>
             </div>
 
@@ -132,32 +132,32 @@ function ResetPasswordFormContent() {
 
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Email Address</label>
+                    <label className="text-sm font-medium text-gray-700">Phone Number</label>
                     <div className="relative">
-                        <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                        <Phone className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                         <input
-                            {...form.register("email")}
-                            type="email"
-                            placeholder="you@example.com"
+                            {...form.register("phone")}
+                            type="tel"
+                            placeholder="+919876543210 or 9876543210"
                             disabled={success}
                             className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
                         />
                     </div>
-                    {form.formState.errors.email && (
-                        <p className="text-xs text-red-500">{form.formState.errors.email.message}</p>
+                    {form.formState.errors.phone && (
+                        <p className="text-xs text-red-500">{form.formState.errors.phone.message}</p>
                     )}
                 </div>
 
                 <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                        <label className="text-sm font-medium text-gray-700">Reset Code</label>
+                        <label className="text-sm font-medium text-gray-700">OTP Code</label>
                         <button
                             type="button"
                             onClick={handleResendOTP}
                             disabled={loading || success}
                             className="text-xs text-orange-600 hover:text-orange-700 disabled:opacity-50"
                         >
-                            Resend Code
+                            Resend OTP
                         </button>
                     </div>
                     <div className="relative">

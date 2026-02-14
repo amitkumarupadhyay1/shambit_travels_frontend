@@ -84,8 +84,10 @@ export async function getMediaForObject(
   objectId: number
 ): Promise<Media[]> {
   try {
+    const contentTypeParam = encodeURIComponent(contentType);
+    const objectIdParam = encodeURIComponent(String(objectId));
     const response = await fetch(
-      `${API_BASE_URL}/api/media/for_object/?content_type=${contentType}&object_id=${objectId}`,
+      `${API_BASE_URL}/api/media/for_object/?content_type=${contentTypeParam}&object_id=${objectIdParam}`,
       {
         method: 'GET',
         headers: {
