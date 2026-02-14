@@ -1,243 +1,136 @@
-// Authentication service for JWT-based auth
+import NextAuth from "next-auth"
+import Credentials from "next-auth/providers/credentials"
+import Facebook from "next-auth/providers/facebook"
+import Google from "next-auth/providers/google"
+import axios from "axios"
 
-// Smart API URL detection for mobile compatibility
-const getApiBaseUrl = (): string => {
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
-  }
-  
-  if (typeof window === 'undefined') {
-    return 'http://localhost:8000/api';
-  }
-  
-  const hostname = window.location.hostname;
-  
-  if (hostname.includes('railway.app') || hostname.includes('vercel.app')) {
-    return 'https://shambit.up.railway.app/api';
-  }
-  
-  if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
-    return `http://${hostname}:8000/api`;
-  }
-  
-  return 'http://localhost:8000/api';
-};
+const hasFacebookEnv =
+  !!process.env.AUTH_FACEBOOK_ID && !!process.env.AUTH_FACEBOOK_SECRET
 
-const API_BASE_URL = getApiBaseUrl();
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  providers: [
+    Google,
+    ...(hasFacebookEnv ? [Facebook] : []),
+    Credentials({
+      credentials: {
+        phone: {},
+        otp: {},
+        email: {},
+        password: {},
+      },
+      authorize: async (credentials) => {
+        try {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-export interface User {
-  id: number;
-  email: string;
-  first_name: string;
-  last_name: string;
-  phone: string;
-  is_active: boolean;
-}
-
-export interface AuthTokens {
-  access: string;
-  refresh: string;
-}
-
-export interface AuthResponse {
-  user: User;
-  access: string;
-  refresh: string;
-}
-
-export interface GuestCheckoutData {
-  email: string;
-  first_name: string;
-  last_name?: string;
-  phone: string;
-}
-
-export interface RegisterData extends GuestCheckoutData {
-  password: string;
-  password_confirm: string;
-}
-
-export interface LoginData {
-  email: string;
-  password: string;
-}
-
-class AuthService {
-  private readonly ACCESS_TOKEN_KEY = 'access_token';
-  private readonly REFRESH_TOKEN_KEY = 'refresh_token';
-  private readonly USER_KEY = 'user';
-
-  // Token management
-  getAccessToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(this.ACCESS_TOKEN_KEY);
-  }
-
-  getRefreshToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
-  }
-
-  setTokens(access: string, refresh: string): void {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(this.ACCESS_TOKEN_KEY, access);
-    localStorage.setItem(this.REFRESH_TOKEN_KEY, refresh);
-  }
-
-  clearTokens(): void {
-    if (typeof window === 'undefined') return;
-    localStorage.removeItem(this.ACCESS_TOKEN_KEY);
-    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-    localStorage.removeItem(this.USER_KEY);
-  }
-
-  // User management
-  getUser(): User | null {
-    if (typeof window === 'undefined') return null;
-    const userStr = localStorage.getItem(this.USER_KEY);
-    if (!userStr) return null;
-    try {
-      return JSON.parse(userStr);
-    } catch {
-      return null;
-    }
-  }
-
-  setUser(user: User): void {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
-  }
-
-  // Check if user is authenticated
-  isAuthenticated(): boolean {
-    return !!this.getAccessToken();
-  }
-
-  // API calls
-  private async fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
-    
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    // Add custom headers from options
-    if (options?.headers) {
-      Object.entries(options.headers).forEach(([key, value]) => {
-        if (typeof value === 'string') {
-          headers[key] = value;
+          // If OTP login
+          if (credentials.phone && credentials.otp) {
+            const res = await axios.post(`${apiUrl}/auth/login-otp/`, {
+              phone: credentials.phone,
+              otp: credentials.otp,
+            })
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const data = res.data as any
+            if (data) {
+              return {
+                ...data.user,
+                accessToken: data.access,
+                refreshToken: data.refresh
+              }
+            }
+          }
+          // If Password login
+          else if (credentials.email && credentials.password) {
+            const res = await axios.post(`${apiUrl}/auth/login/`, {
+              email: credentials.email,
+              password: credentials.password,
+            })
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const data = res.data as any
+            if (data) {
+              return {
+                ...data.user,
+                accessToken: data.access,
+                refreshToken: data.refresh
+              }
+            }
+          }
+          return null
+        } catch (err: unknown) {
+          console.error("Auth Error:", err)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const error = err as any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((axios as any).isAxiosError(error) && error.response) {
+            console.error("Backend Error Response:", error.response.data)
+            console.error("Backend Error Status:", error.response.status)
+          }
+          return null
         }
-      });
-    }
+      },
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, user, account }) {
+      if (user) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        token.accessToken = (user as any).accessToken
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        token.refreshToken = (user as any).refreshToken
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        token.id = (user as any).id
 
-    // Add auth token if available
-    const token = this.getAccessToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+        // Sync Social Login
+        if (account?.provider === "google" || account?.provider === "facebook") {
+          try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+            const fullName = user.name || ""
+            const [firstName, ...restName] = fullName.split(" ")
+            const lastName = restName.join(" ")
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const providerToken = account.provider === "google" ? (account as any).id_token : (account as any).access_token
 
-    console.log('Auth API request:', { url, method: options?.method || 'GET', body: options?.body });
+            if (!providerToken) {
+              console.error(`Missing ${account.provider} provider token`)
+              return token
+            }
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
-
-    console.log('Auth API response status:', response.status);
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: response.statusText }));
-      console.error('Auth API error response:', errorData);
-      throw new Error(errorData.error || errorData.detail || `HTTP ${response.status}`);
-    }
-
-    return response.json();
-  }
-
-  // Guest checkout - creates temporary user
-  async guestCheckout(data: GuestCheckoutData): Promise<AuthResponse> {
-    console.log('Guest checkout request data:', data);
-    
-    try {
-      const response = await this.fetchApi<AuthResponse>('/auth/guest-checkout/', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
-
-      this.setTokens(response.access, response.refresh);
-      this.setUser(response.user);
-
-      return response;
-    } catch (error) {
-      console.error('Guest checkout error:', error);
-      throw error;
-    }
-  }
-
-  // Register new user
-  async register(data: RegisterData): Promise<AuthResponse> {
-    const response = await this.fetchApi<AuthResponse>('/auth/register/', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-
-    this.setTokens(response.access, response.refresh);
-    this.setUser(response.user);
-
-    return response;
-  }
-
-  // Login existing user
-  async login(data: LoginData): Promise<AuthResponse> {
-    const response = await this.fetchApi<AuthResponse>('/auth/login/', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-
-    this.setTokens(response.access, response.refresh);
-    this.setUser(response.user);
-
-    return response;
-  }
-
-  // Logout
-  async logout(): Promise<void> {
-    const refreshToken = this.getRefreshToken();
-    if (refreshToken) {
-      try {
-        await this.fetchApi('/auth/logout/', {
-          method: 'POST',
-          body: JSON.stringify({ refresh: refreshToken }),
-        });
-      } catch (error) {
-        console.error('Logout API call failed:', error);
+            const res = await axios.post(`${apiUrl}/auth/nextauth-sync/`, {
+              email: user.email,
+              first_name: firstName,
+              last_name: lastName,
+              provider: account.provider,
+              uid: account.providerAccountId,
+              token: providerToken,
+            })
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const data = res.data as any
+            token.accessToken = data.access
+            token.refreshToken = data.refresh
+            token.id = data.user_id
+            // Update user info from backend
+            Object.assign(token, data)
+          } catch (e) {
+            console.error("Sync failed", e)
+          }
+        }
       }
-    }
-    this.clearTokens();
-  }
-
-  // Refresh access token
-  async refreshAccessToken(): Promise<string> {
-    const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
-
-    const response = await this.fetchApi<{ access: string }>('/auth/refresh/', {
-      method: 'POST',
-      body: JSON.stringify({ refresh: refreshToken }),
-    });
-
-    localStorage.setItem(this.ACCESS_TOKEN_KEY, response.access);
-    return response.access;
-  }
-
-  // Get current user from API
-  async getCurrentUser(): Promise<User> {
-    const user = await this.fetchApi<User>('/auth/me/');
-    this.setUser(user);
-    return user;
-  }
-}
-
-export const authService = new AuthService();
+      return token
+    },
+    async session({ session, token }) {
+      if (token) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (session as any).accessToken = token.accessToken;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (session as any).user.id = token.id as string;
+      }
+      return session
+    },
+  },
+  pages: {
+    signIn: "/login",
+  },
+  session: {
+    strategy: "jwt",
+  },
+  secret: process.env.AUTH_SECRET,
+})

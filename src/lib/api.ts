@@ -1,4 +1,5 @@
 import { BookingRequest, BookingResponse } from './bookings';
+import { tokenManager } from './tokenManager';
 
 // Determine API base URL with smart fallback for local network access
 const getApiBaseUrl = (): string => {
@@ -276,8 +277,8 @@ class ApiService {
             await this.sleep(delay);
           }
 
-          // Get auth token if available
-          const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+          // Get auth token if available - use token manager for auto-refresh
+          const token = await tokenManager.getValidAccessToken();
           
           const headers: Record<string, string> = {
             'Content-Type': 'application/json',

@@ -21,8 +21,8 @@ export interface BookingRequest {
 export interface BookingResponse {
   id: number;
   booking_reference: string;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED';
+  status: 'DRAFT' | 'PENDING_PAYMENT' | 'CONFIRMED' | 'CANCELLED';
   total_price: string;
-  payment_url?: string;
+  payment_url?: string | null;
   created_at: string;
 }

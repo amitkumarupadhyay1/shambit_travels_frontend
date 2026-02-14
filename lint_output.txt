@@ -1,0 +1,47 @@
+
+> shambit-frontend@0.1.0 lint
+> eslint
+
+
+C:\Users\AMIT\Desktop\website - Copy\frontend\shambit-frontend\src\app\(dashboard)\bookings\page.tsx
+   6:29  warning  'MapPin' is defined but never used          @typescript-eslint/no-unused-vars
+  21:12  warning  'error' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  31:46  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+C:\Users\AMIT\Desktop\website - Copy\frontend\shambit-frontend\src\app\(dashboard)\profile\page.tsx
+  42:44  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  57:19  warning  'res' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  75:18  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+
+C:\Users\AMIT\Desktop\website - Copy\frontend\shambit-frontend\src\components\auth\ForgotPasswordForm.tsx
+  51:18  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+  51:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  72:18  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+  72:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\AMIT\Desktop\website - Copy\frontend\shambit-frontend\src\components\auth\LoginForm.tsx
+   54:18  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+  108:18  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\AMIT\Desktop\website - Copy\frontend\shambit-frontend\src\components\auth\RegisterForm.tsx
+  61:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  62:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  63:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\AMIT\Desktop\website - Copy\frontend\shambit-frontend\src\lib\auth.ts
+   4:10  warning  'z' is defined but never used             @typescript-eslint/no-unused-vars
+  27:38  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  42:38  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  62:38  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  63:39  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  64:29  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  78:38  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  93:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  94:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\AMIT\Desktop\website - Copy\frontend\shambit-frontend\src\types\next-auth.d.ts
+  1:8   warning  'NextAuth' is defined but never used  @typescript-eslint/no-unused-vars
+  2:10  warning  'JWT' is defined but never used       @typescript-eslint/no-unused-vars
+
+✖ 26 problems (15 errors, 11 warnings)
+

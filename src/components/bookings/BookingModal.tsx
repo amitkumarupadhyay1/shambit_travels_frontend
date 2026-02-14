@@ -4,8 +4,10 @@ import { useState } from 'react';
 import BookingForm from './BookingForm';
 import { BookingRequest, BookingResponse } from '@/lib/bookings';
 import { apiService } from '@/lib/api';
-import { authService } from '@/lib/auth';
+// import { authService } from '@/lib/auth'; // Removed
 import { X } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import axios from 'axios';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -32,17 +34,19 @@ export default function BookingModal({
 }: BookingModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { data: session } = useSession();
 
   const handleSubmit = async (data: BookingRequest) => {
     setError(null);
     setIsProcessing(true);
-    
+
     try {
       // Check if user is authenticated
-      if (!authService.isAuthenticated()) {
+      if (!session?.user) {
         // Create guest user with booking details
         console.log('Creating guest user for checkout...');
-        await authService.guestCheckout({
+        // await authService.guestCheckout({ ... });
+        await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/guest-checkout/`, {
           email: data.email || data.customer_email,
           first_name: data.first_name || '',
           last_name: data.last_name || '',
@@ -89,11 +93,11 @@ export default function BookingModal({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
-      <div 
+      <div
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
         onClick={onClose}
       />
-      
+
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -110,7 +114,7 @@ export default function BookingModal({
               <X className="w-6 h-6" />
             </button>
           </div>
-          
+
           {/* Content */}
           <div className="px-6 py-6">
             {error && (
@@ -119,7 +123,7 @@ export default function BookingModal({
                 <p className="text-sm mt-1">{error}</p>
               </div>
             )}
-            
+
             <BookingForm
               packageId={packageId}
               selections={selections}
