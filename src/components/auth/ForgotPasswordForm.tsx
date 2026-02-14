@@ -28,10 +28,17 @@ export default function ForgotPasswordForm() {
         setSuccess(false)
 
         try {
-            await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/forgot-password/`, {
-                email: data.email,
-            })
+            const response = await axios.post(
+                `${process.env.NEXT_PUBLIC_API_URL}/auth/forgot-password/`, 
+                {
+                    email: data.email,
+                },
+                {
+                    timeout: 30000, // 30 second timeout
+                }
+            )
 
+            console.log('API Response:', response.data)
             setSuccess(true)
             
             // Redirect to reset password page after 2 seconds
@@ -39,8 +46,19 @@ export default function ForgotPasswordForm() {
                 router.push(`/reset-password?email=${encodeURIComponent(data.email)}`)
             }, 2000)
         } catch (err: unknown) {
-            const e = err as { response?: { data?: { error?: string; detail?: string }; status?: number } }
-            if (e.response) {
+            console.error('Forgot Password Error:', err)
+            const e = err as { 
+                response?: { 
+                    data?: { error?: string; detail?: string }; 
+                    status?: number 
+                }; 
+                code?: string;
+                message?: string;
+            }
+            
+            if (e.code === 'ECONNABORTED') {
+                setError("Request timed out. Please check your internet connection and try again.")
+            } else if (e.response) {
                 const errorData = e.response.data
                 if (e.response.status === 404) {
                     setError("No account found with this email address")
