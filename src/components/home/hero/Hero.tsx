@@ -28,8 +28,8 @@ export default function Hero({ children, className }: HeroProps) {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={isTypingComplete ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-                    transition={{ duration: 0.8, delay: 0.2 }}
-                    className="container mx-auto px-4 sm:px-6 lg:px-8 mt-6 flex flex-col items-center"
+                    transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+                    className="container mx-auto px-4 sm:px-6 lg:px-8 mt-6 flex flex-col items-center will-change-transform"
                 >
                     {children}
                 </motion.div>

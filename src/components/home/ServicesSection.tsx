@@ -50,7 +50,7 @@ const ServicesSection = () => {
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
           viewport={{ once: true }}
           className="text-center mb-16"
         >
@@ -70,13 +70,13 @@ const ServicesSection = () => {
                 key={service.title}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
+                transition={{ duration: 0.5, delay: index * 0.08, ease: "easeOut" }}
                 viewport={{ once: true }}
                 className="group"
               >
-                <div className={cn(sacredStyles.card, "text-center hover:shadow-xl transition-all duration-300 group-hover:scale-105")}>
+                <div className={cn(sacredStyles.card, "text-center hover:shadow-xl transition-all duration-300 group-hover:scale-105 will-change-transform")}>
                   {/* Icon */}
-                  <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-primary-saffron to-primary-gold rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-primary-saffron to-primary-gold rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 will-change-transform">
                     <Icon className="w-8 h-8 text-white" />
                   </div>
 
@@ -108,7 +108,7 @@ const ServicesSection = () => {
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
+          transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
           viewport={{ once: true }}
           className="text-center mt-16"
         >

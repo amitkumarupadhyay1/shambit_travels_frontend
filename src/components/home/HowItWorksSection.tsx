@@ -32,7 +32,7 @@ const HowItWorksSection = () => {
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
           viewport={{ once: true }}
           className="text-center mb-16"
         >
@@ -52,7 +52,7 @@ const HowItWorksSection = () => {
                 key={step.step}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.2 }}
+                transition={{ duration: 0.5, delay: index * 0.15, ease: "easeOut" }}
                 viewport={{ once: true }}
                 className="relative text-center group"
               >
@@ -64,7 +64,7 @@ const HowItWorksSection = () => {
                 </div>
 
                 {/* Icon */}
-                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-orange-600 to-yellow-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-orange-600 to-yellow-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 will-change-transform">
                   <Icon className="w-10 h-10 text-white" />
                 </div>
 
@@ -89,7 +89,7 @@ const HowItWorksSection = () => {
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
+          transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
           viewport={{ once: true }}
           className="text-center mt-16"
         >

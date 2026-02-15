@@ -7,13 +7,18 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { cn, sacredStyles, getImageUrl } from '@/lib/utils';
 import { apiService, City } from '@/lib/api';
+import { getMediaForObject } from '@/lib/media';
 
 interface FeaturedCitiesSectionProps {
   selectedCity?: City | null;
 }
 
+interface CityWithMedia extends City {
+  mediaLibraryImage?: string;
+}
+
 const FeaturedCitiesSection = ({ selectedCity }: FeaturedCitiesSectionProps) => {
-  const [cities, setCities] = useState<City[]>([]);
+  const [cities, setCities] = useState<CityWithMedia[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,7 +28,31 @@ const FeaturedCitiesSection = ({ selectedCity }: FeaturedCitiesSectionProps) => 
         const citiesData = selectedCity
           ? [selectedCity]
           : await apiService.getCities();
-        setCities(citiesData.slice(0, 6)); // Limit to 6 cities
+        
+        const citiesWithLimit = citiesData.slice(0, 6); // Limit to 6 cities
+        
+        // Fetch Media Library images for cities without hero_image
+        const citiesWithMedia = await Promise.all(
+          citiesWithLimit.map(async (city) => {
+            if (!city.hero_image) {
+              // Fetch from Media Library
+              try {
+                const media = await getMediaForObject('cities.city', city.id);
+                if (media && media.length > 0) {
+                  return {
+                    ...city,
+                    mediaLibraryImage: media[0].file_url, // Use first image
+                  };
+                }
+              } catch (error) {
+                console.error(`Failed to fetch media for city ${city.id}:`, error);
+              }
+            }
+            return city;
+          })
+        );
+        
+        setCities(citiesWithMedia);
       } catch (error) {
         console.error('Failed to fetch cities:', error);
         setCities([]); // Set empty array on error
@@ -78,64 +107,71 @@ const FeaturedCitiesSection = ({ selectedCity }: FeaturedCitiesSectionProps) => 
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {cities.map((city, index) => (
-              <motion.div
-                key={city.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="group"
-              >
-                <Link href={`/destinations/${city.id}`}>
-                  <div className={cn(sacredStyles.card, "overflow-hidden hover:shadow-xl transition-all duration-300 group-hover:scale-105")}>
-                    {/* City Image */}
-                    <div className="relative h-48 mb-6 rounded-xl overflow-hidden">
-                      {city.hero_image ? (
-                        <Image
-                          src={getImageUrl(city.hero_image) || ''}
-                          alt={city.name}
-                          fill
-                          className="object-cover group-hover:scale-110 transition-transform duration-500"
-                          onError={(e) => {
-                            // Fallback to placeholder if image fails to load
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      ) : null}
-                      {!city.hero_image && (
-                        <div className="w-full h-full bg-gradient-to-br from-orange-600/20 to-yellow-600/20 flex items-center justify-center">
-                          <MapPin className="w-12 h-12 text-yellow-600" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                    </div>
+            {cities.map((city, index) => {
+              // Determine which image to use: hero_image or Media Library
+              const imageUrl = city.hero_image 
+                ? getImageUrl(city.hero_image) 
+                : city.mediaLibraryImage;
+              
+              return (
+                <motion.div
+                  key={city.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className="group"
+                >
+                  <Link href={`/destinations/${city.id}`}>
+                    <div className={cn(sacredStyles.card, "overflow-hidden hover:shadow-xl transition-all duration-300 group-hover:scale-105")}>
+                      {/* City Image */}
+                      <div className="relative h-48 mb-6 rounded-xl overflow-hidden">
+                        {imageUrl ? (
+                          <Image
+                            src={imageUrl}
+                            alt={city.name}
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-500"
+                            onError={(e) => {
+                              // Fallback to placeholder if image fails to load
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          // Fallback: Show placeholder icon when no image available
+                          <div className="w-full h-full bg-gradient-to-br from-orange-600/20 to-yellow-600/20 flex items-center justify-center">
+                            <MapPin className="w-12 h-12 text-yellow-600" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                      </div>
 
-                    {/* City Info */}
-                    <div>
-                      <h3 className={cn(sacredStyles.heading.h4, "mb-2 group-hover:text-primary-saffron transition-colors")}>
-                        {city.name}
-                      </h3>
-                      <p className={cn(sacredStyles.text.small, "mb-4 flex items-center")}>
-                        <MapPin className="w-4 h-4 mr-1 text-yellow-600" />
-                        {city.slug}
-                      </p>
-                      {city.description && (
-                        <p className={cn(sacredStyles.text.body, "mb-4 line-clamp-3")}>
-                          {city.description}
+                      {/* City Info */}
+                      <div>
+                        <h3 className={cn(sacredStyles.heading.h4, "mb-2 group-hover:text-primary-saffron transition-colors")}>
+                          {city.name}
+                        </h3>
+                        <p className={cn(sacredStyles.text.small, "mb-4 flex items-center")}>
+                          <MapPin className="w-4 h-4 mr-1 text-yellow-600" />
+                          {city.slug}
                         </p>
-                      )}
+                        {city.description && (
+                          <p className={cn(sacredStyles.text.body, "mb-4 line-clamp-3")}>
+                            {city.description}
+                          </p>
+                        )}
 
-                      {/* Explore Link */}
-                      <div className="flex items-center text-primary-saffron font-medium group-hover:text-primary-gold transition-colors">
-                        <span>Explore {city.name}</span>
-                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                        {/* Explore Link */}
+                        <div className="flex items-center text-primary-saffron font-medium group-hover:text-primary-gold transition-colors">
+                          <span>Explore {city.name}</span>
+                          <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
+                  </Link>
+                </motion.div>
+              );
+            })}
           </div>
         )}
 

@@ -1,5 +1,6 @@
 import { BookingRequest, BookingResponse } from './bookings';
 import { tokenManager } from './tokenManager';
+import type { SearchResponse, SearchStats } from '@/types/search';
 
 // Determine API base URL with smart fallback for local network access
 const getApiBaseUrl = (): string => {
@@ -507,6 +508,53 @@ class ApiService {
     return this.fetchApi<BookingResponse>('/bookings/', {
       method: 'POST',
       body: JSON.stringify(data),
+      skipCache: true,
+    });
+  }
+
+  // Universal Search
+  async universalSearch(
+    query: string,
+    options?: {
+      categories?: ('packages' | 'cities' | 'articles' | 'experiences')[];
+      limit?: number;
+    }
+  ): Promise<SearchResponse> {
+    if (!query || query.trim().length < 2) {
+      throw new ApiException('Query must be at least 2 characters', 400);
+    }
+
+    if (query.length > 100) {
+      throw new ApiException('Query must be less than 100 characters', 400);
+    }
+
+    const params = new URLSearchParams({
+      q: query.trim(),
+    });
+
+    if (options?.categories && options.categories.length > 0) {
+      params.append('categories', options.categories.join(','));
+    }
+
+    if (options?.limit) {
+      params.append('limit', Math.min(options.limit, 50).toString());
+    }
+
+    const endpoint = `/search/?${params.toString()}`;
+    
+    console.log('🔍 universalSearch called:', { query, options, endpoint });
+
+    const response = await this.fetchApi<SearchResponse>(endpoint, {
+      skipCache: true, // Skip cache for now to debug
+    });
+
+    console.log('✅ universalSearch response:', response);
+
+    return response;
+  }
+
+  async getSearchStats(): Promise<SearchStats> {
+    return this.fetchApi<SearchStats>('/search/stats/', {
       skipCache: true,
     });
   }

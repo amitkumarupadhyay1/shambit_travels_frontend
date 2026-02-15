@@ -7,9 +7,10 @@ import Footer from '@/components/layout/Footer';
 import HeroSection from '@/components/home/HeroSection';
 import HowItWorksSection from '@/components/home/HowItWorksSection';
 import ServicesSection from '@/components/home/ServicesSection';
-import FeaturedCitiesSection from '@/components/home/FeaturedCitiesSection';
-import FeaturedPackagesSection from '@/components/home/FeaturedPackagesSection';
-import LatestArticlesSection from '@/components/home/LatestArticlesSection';
+// Hidden sections - kept for future use
+// import FeaturedCitiesSection from '@/components/home/FeaturedCitiesSection';
+// import FeaturedPackagesSection from '@/components/home/FeaturedPackagesSection';
+// import LatestArticlesSection from '@/components/home/LatestArticlesSection';
 import BackendStatus from '@/components/common/BackendStatus';
 import { City, apiService } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
@@ -92,7 +93,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen relative">
+    <main className="min-h-screen relative bg-white">
       <Header />
       
       {/* Hero Section with City Selector */}
@@ -104,11 +105,15 @@ export default function Home() {
         isExploreLoading={isLoadingCityContent}
       />
       
-      {/* How It Works */}
-      <HowItWorksSection />
+      {/* How It Works - Optimized spacing and responsive design */}
+      <div className="w-full">
+        <HowItWorksSection />
+      </div>
       
-      {/* Services */}
-      <ServicesSection />
+      {/* Services - Optimized spacing and responsive design */}
+      <div className="w-full">
+        <ServicesSection />
+      </div>
       
       {/* Content Sections with Loading Overlay */}
       <div ref={contentRef} className="relative">
@@ -131,18 +136,19 @@ export default function Home() {
           )}
         </AnimatePresence>
 
-        {/* Featured Cities (context-aware) - Only render after default city is loaded */}
+        {/* Featured Cities, Packages, and Articles - HIDDEN PER REQUIREMENTS */}
+        {/* Keep components for future use - DO NOT DELETE */}
+        {/* These sections are commented out to create a cleaner, more focused homepage */}
+        {/* that drives users to take action through the hero section */}
+        {/* 
         {!isLoadingDefaultCity && (
           <>
             <FeaturedCitiesSection selectedCity={selectedCity} key={`cities-${selectedCity?.id}`} />
-            
-            {/* Featured Packages (context-aware) */}
             <FeaturedPackagesSection selectedCity={selectedCity} key={`packages-${selectedCity?.id}`} />
-            
-            {/* Latest Articles (context-aware) */}
             <LatestArticlesSection selectedCity={selectedCity} key={`articles-${selectedCity?.id}`} />
           </>
         )}
+        */}
       </div>
       
       <Footer />

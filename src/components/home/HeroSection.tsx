@@ -79,27 +79,27 @@ const HeroSection = ({
   if (isLoadingDefaultCity) {
     return (
       <Hero>
-        <div className="flex flex-col items-center justify-center text-center max-w-6xl mx-auto px-4 z-30 relative">
-          <div className="flex flex-col items-center space-y-8 w-full mt-4">
-            <p className="text-lg md:text-xl max-w-3xl font-bold tracking-wide bg-gradient-to-r from-orange-600 via-amber-600 to-orange-500 bg-clip-text text-transparent drop-shadow-sm">
+        <div className="flex flex-col items-center justify-center text-center max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 z-30 relative">
+          <div className="flex flex-col items-center space-y-6 sm:space-y-8 w-full mt-4">
+            <p className="text-base sm:text-lg md:text-xl max-w-3xl font-bold tracking-wide bg-gradient-to-r from-orange-600 via-amber-600 to-orange-500 bg-clip-text text-transparent drop-shadow-sm px-4">
               Your personalized journey to India&apos;s divine essence.
             </p>
-            <div className="relative w-full max-w-lg mx-auto font-sans">
+            <div className="relative w-full max-w-lg mx-auto font-sans px-4 sm:px-0">
               <div className="relative group z-50">
                 <div className="absolute -inset-[1px] bg-gradient-to-r from-orange-400 via-pink-500 to-blue-500 rounded-full opacity-30 blur-sm"></div>
                 <div className="relative bg-white/90 backdrop-blur-2xl rounded-full shadow-2xl shadow-gray-200/50 flex items-center">
-                  <div className="pl-6 text-orange-500">
-                    <MapPin className="w-5 h-5" />
+                  <div className="pl-4 sm:pl-6 text-orange-500">
+                    <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <input
                     type="text"
                     value={initialCity?.name || ""}
                     placeholder="Search destinations (e.g. Ayodhya)"
-                    className="w-full bg-transparent border-none outline-none focus:outline-none ring-0 focus:ring-0 py-4 px-4 text-gray-800 placeholder:text-gray-400 text-base font-medium leading-relaxed tracking-wide"
+                    className="w-full bg-transparent border-none outline-none focus:outline-none ring-0 focus:ring-0 py-3 sm:py-4 px-3 sm:px-4 text-gray-800 placeholder:text-gray-400 text-sm sm:text-base font-medium leading-relaxed tracking-wide"
                     readOnly
                   />
-                  <div className="pr-6">
-                    <Loader2 className="w-5 h-5 text-orange-500 animate-spin" />
+                  <div className="pr-4 sm:pr-6">
+                    <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500 animate-spin" />
                   </div>
                 </div>
               </div>
@@ -112,22 +112,22 @@ const HeroSection = ({
 
   return (
     <Hero>
-      <div className="flex flex-col items-center justify-center text-center max-w-6xl mx-auto px-4 z-30 relative">
-        <div className="flex flex-col items-center space-y-8 w-full mt-4">
+      <div className="flex flex-col items-center justify-center text-center max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 z-30 relative">
+        <div className="flex flex-col items-center space-y-6 sm:space-y-8 w-full mt-4">
           {/* Subtext */}
-          <p className="text-lg md:text-xl max-w-3xl font-bold tracking-wide bg-gradient-to-r from-orange-600 via-amber-600 to-orange-500 bg-clip-text text-transparent drop-shadow-sm">
+          <p className="text-base sm:text-lg md:text-xl max-w-3xl font-bold tracking-wide bg-gradient-to-r from-orange-600 via-amber-600 to-orange-500 bg-clip-text text-transparent drop-shadow-sm px-4">
             Your personalized journey to India&apos;s divine essence.
           </p>
 
           {/* City Search Combo Box */}
-          <div className="relative w-full max-w-lg mx-auto font-sans">
+          <div className="relative w-full max-w-lg mx-auto font-sans px-4 sm:px-0">
             <div className="relative group z-50">
               {/* Gradient Halo Effect */}
               <div className="absolute -inset-[1px] bg-gradient-to-r from-orange-400 via-pink-500 to-blue-500 rounded-full opacity-30 group-hover:opacity-100 transition duration-500 blur-sm"></div>
 
               <div className="relative bg-white/90 backdrop-blur-2xl rounded-full shadow-2xl shadow-gray-200/50 flex items-center">
-                <div className="pl-6 text-orange-500">
-                  <MapPin className="w-5 h-5" />
+                <div className="pl-4 sm:pl-6 text-orange-500">
+                  <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
 
                 <input
@@ -137,7 +137,7 @@ const HeroSection = ({
                   onFocus={handleInputFocus}
                   onKeyDown={handleKeyDown}
                   placeholder="Search destinations (e.g. Ayodhya)"
-                  className="w-full bg-transparent border-none outline-none focus:outline-none ring-0 focus:ring-0 py-4 px-4 text-gray-800 placeholder:text-gray-400 text-base font-medium leading-relaxed tracking-wide"
+                  className="w-full bg-transparent border-none outline-none focus:outline-none ring-0 focus:ring-0 py-3 sm:py-4 px-3 sm:px-4 text-gray-800 placeholder:text-gray-400 text-sm sm:text-base font-medium leading-relaxed tracking-wide"
                   disabled={loading}
                   aria-label="Search cities"
                   aria-autocomplete="list"
@@ -146,12 +146,12 @@ const HeroSection = ({
                   role="combobox"
                 />
 
-                <div className="pr-6 flex items-center space-x-2">
+                <div className="pr-4 sm:pr-6 flex items-center space-x-2">
                   {/* Clear Button */}
                   {searchQuery && (
                     <button
                       onClick={handleClear}
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      className="text-gray-400 hover:text-gray-600 transition-colors touch-manipulation p-1"
                       aria-label="Clear search"
                       type="button"
                     >
@@ -161,11 +161,11 @@ const HeroSection = ({
 
                   {/* Loading or Dropdown Icon */}
                   {loading ? (
-                    <Loader2 className="w-5 h-5 text-orange-500 animate-spin" />
+                    <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500 animate-spin" />
                   ) : (
                     <ChevronDown 
                       className={cn(
-                        "w-5 h-5 text-gray-400 transition-transform duration-300",
+                        "w-4 h-4 sm:w-5 sm:h-5 text-gray-400 transition-transform duration-300",
                         isDropdownOpen ? "rotate-180" : "rotate-0"
                       )} 
                     />
@@ -279,9 +279,10 @@ const HeroSection = ({
             whileHover={{ scale: isExploreLoading ? 1 : 1.05 }}
             whileTap={{ scale: isExploreLoading ? 1 : 0.95 }}
             className={cn(
-              "group relative overflow-hidden rounded-full px-10 py-4 font-bold text-lg transition-all duration-500",
+              "group relative overflow-hidden rounded-full px-6 sm:px-8 md:px-10 py-3 sm:py-4 font-bold text-base sm:text-lg transition-all duration-500 touch-manipulation",
               "bg-gradient-to-r from-orange-600 to-amber-500 text-white shadow-xl shadow-orange-500/20 hover:shadow-orange-500/40",
-              "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-orange-500/20"
+              "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-orange-500/20",
+              "min-h-[44px] will-change-transform"
             )}
             aria-label={selectedCity ? `Explore ${selectedCity.name}` : 'Select a city to explore'}
           >
@@ -301,7 +302,7 @@ const HeroSection = ({
             <span className="relative flex items-center space-x-2">
               {isExploreLoading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                   <span className="tracking-wide">Loading {selectedCity?.name}...</span>
                 </>
               ) : (
@@ -309,7 +310,7 @@ const HeroSection = ({
                   <span className="tracking-wide">
                     {selectedCity ? `Explore ${selectedCity.name}` : 'Select a City'}
                   </span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
             </span>
