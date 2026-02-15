@@ -284,6 +284,137 @@ export async function checkMediaHealth() {
 }
 
 /**
+ * Delete a media file (ADMIN ONLY)
+ * Requires authentication token
+ * 
+ * @param mediaId - ID of the media to delete
+ * @param token - JWT authentication token
+ * @returns Promise<{success: boolean, message?: string, error?: string}>
+ */
+export async function deleteMedia(
+  mediaId: number,
+  token: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/media/${mediaId}/`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error(`Failed to delete media: ${response.status}`, errorData);
+      return {
+        success: false,
+        error: errorData.detail || errorData.error || `Failed to delete media: ${response.status}`,
+      };
+    }
+    
+    // 204 No Content doesn't have a body, but our custom response does
+    const data = await response.json().catch(() => ({ message: 'Media deleted successfully' }));
+    
+    return {
+      success: true,
+      message: data.message || 'Media deleted successfully',
+    };
+  } catch (error) {
+    console.error('Error deleting media:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
+}
+
+/**
+ * Update media metadata (ADMIN ONLY)
+ * Requires authentication token
+ * 
+ * @param mediaId - ID of the media to update
+ * @param data - Updated metadata (title, alt_text)
+ * @param token - JWT authentication token
+ * @returns Promise<Media | null>
+ */
+export async function updateMedia(
+  mediaId: number,
+  data: { title?: string; alt_text?: string },
+  token: string
+): Promise<Media | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/media/${mediaId}/`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      console.error(`Failed to update media: ${response.status}`);
+      return null;
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error('Error updating media:', error);
+    return null;
+  }
+}
+
+/**
+ * Upload a new media file (ADMIN ONLY)
+ * Requires authentication token
+ * 
+ * @param file - File to upload
+ * @param metadata - Optional metadata (title, alt_text, content_type, object_id)
+ * @param token - JWT authentication token
+ * @returns Promise<Media | null>
+ */
+export async function uploadMedia(
+  file: File,
+  metadata: {
+    title?: string;
+    alt_text?: string;
+    content_type?: string;
+    object_id?: number;
+  },
+  token: string
+): Promise<Media | null> {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    if (metadata.title) formData.append('title', metadata.title);
+    if (metadata.alt_text) formData.append('alt_text', metadata.alt_text);
+    if (metadata.content_type) formData.append('content_type', metadata.content_type);
+    if (metadata.object_id) formData.append('object_id', String(metadata.object_id));
+    
+    const response = await fetch(`${API_BASE_URL}/api/media/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error(`Failed to upload media: ${response.status}`, errorData);
+      return null;
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error('Error uploading media:', error);
+    return null;
+  }
+}
+
+/**
  * Helper function to get optimized image URL
  * For Cloudinary URLs, this adds optimization parameters
  * 
