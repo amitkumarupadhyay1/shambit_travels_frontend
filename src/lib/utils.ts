@@ -43,7 +43,8 @@ export function generateSlug(text: string): string {
 export function getImageUrl(imagePath?: string): string | undefined {
   if (!imagePath) return undefined;
   
-  // If it's already a full URL, return as is
+  // If it's already a full URL (from Media API), return as is
+  // This handles both Cloudinary URLs and Django media URLs with cache-busting
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
   }
@@ -77,14 +78,7 @@ export function getImageUrl(imagePath?: string): string | undefined {
   // Ensure the path starts with /
   const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
   
-  const fullUrl = `${backendUrl}${cleanPath}`;
-  
-  // Debug logging
-  if (typeof window !== 'undefined') {
-    console.log('🖼️ Image URL:', { imagePath, backendUrl, fullUrl });
-  }
-  
-  return fullUrl;
+  return `${backendUrl}${cleanPath}`;
 }
 
 // Sacred design helper classes

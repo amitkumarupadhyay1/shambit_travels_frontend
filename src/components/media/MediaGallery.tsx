@@ -45,6 +45,11 @@ export function MediaGallery({
     }
 
     fetchMedia();
+
+    // Poll for updates every 30 seconds to reflect admin changes
+    const pollInterval = setInterval(fetchMedia, 30000);
+
+    return () => clearInterval(pollInterval);
   }, [contentType, objectId]);
 
   const gridColsClass = {
