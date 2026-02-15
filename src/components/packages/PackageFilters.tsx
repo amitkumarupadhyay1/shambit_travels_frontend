@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { City } from '@/lib/api';
-import { cn, sacredStyles } from '@/lib/utils';
-import { Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
+import FilterSidebar, { FilterSection } from '@/components/common/FilterSidebar';
 
 export interface FilterState {
   cityId: number | null;
@@ -17,6 +16,8 @@ interface PackageFiltersProps {
   filters: FilterState;
   onChange: (filters: FilterState) => void;
   onClear: () => void;
+  totalCount?: number;
+  filteredCount?: number;
 }
 
 export default function PackageFilters({
@@ -24,6 +25,8 @@ export default function PackageFilters({
   filters,
   onChange,
   onClear,
+  totalCount,
+  filteredCount,
 }: PackageFiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -49,138 +52,105 @@ export default function PackageFilters({
     filters.priceRange[1] < 100000 ||
     filters.minExperiences > 0;
 
+  const activeFilterCount = [
+    filters.cityId !== null,
+    filters.priceRange[0] > 0 || filters.priceRange[1] < 100000,
+    filters.minExperiences > 0,
+  ].filter(Boolean).length;
+
+  const subtitle = totalCount && filteredCount 
+    ? `Showing ${filteredCount} of ${totalCount} packages`
+    : undefined;
+
   return (
-    <div className="mb-8">
-      {/* Filter Toggle Button (Mobile) */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "md:hidden w-full flex items-center justify-between p-4 rounded-lg border-2 transition-colors",
-          isOpen ? "border-orange-600 bg-orange-50" : "border-gray-200 bg-white"
-        )}
-      >
-        <div className="flex items-center gap-2">
-          <Filter className="w-5 h-5" />
-          <span className="font-medium">Filters</span>
-          {hasActiveFilters && (
-            <span className="px-2 py-0.5 bg-orange-600 text-white text-xs rounded-full">
-              Active
-            </span>
-          )}
-        </div>
-        {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-      </button>
+    <FilterSidebar
+      isOpen={isOpen}
+      onToggle={() => setIsOpen(!isOpen)}
+      onClear={onClear}
+      hasActiveFilters={hasActiveFilters}
+      activeFilterCount={activeFilterCount}
+      title="Filters"
+      subtitle={subtitle}
+    >
+      {/* City Filter */}
+      <FilterSection title="Destination">
+        <select
+          value={filters.cityId || ''}
+          onChange={(e) => handleCityChange(e.target.value ? parseInt(e.target.value) : null)}
+          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm"
+        >
+          <option value="">All Cities</option>
+          {cities.map(city => (
+            <option key={city.id} value={city.id}>
+              {city.name}
+            </option>
+          ))}
+        </select>
+      </FilterSection>
 
-      {/* Filters Panel */}
-      <div className={cn(
-        "mt-4 md:mt-0 space-y-6",
-        isOpen ? "block" : "hidden md:block"
-      )}>
-        <div className={sacredStyles.card}>
-          <div className="flex items-center justify-between mb-6">
-            <h3 className={sacredStyles.heading.h4}>Filters</h3>
-            {hasActiveFilters && (
-              <button
-                onClick={onClear}
-                className="text-sm text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1"
-              >
-                <X className="w-4 h-4" />
-                Clear All
-              </button>
-            )}
+      {/* Price Range */}
+      <FilterSection title="Price Range (₹)">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              value={filters.priceRange[0]}
+              onChange={(e) => handlePriceChange(parseInt(e.target.value) || 0, filters.priceRange[1])}
+              placeholder="Min"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+            />
+            <span className="text-gray-400 text-sm">-</span>
+            <input
+              type="number"
+              value={filters.priceRange[1]}
+              onChange={(e) => handlePriceChange(filters.priceRange[0], parseInt(e.target.value) || 100000)}
+              placeholder="Max"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+            />
           </div>
-
-          <div className="space-y-6">
-            {/* City Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Destination
-              </label>
-              <select
-                value={filters.cityId || ''}
-                onChange={(e) => handleCityChange(e.target.value ? parseInt(e.target.value) : null)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              >
-                <option value="">All Cities</option>
-                {cities.map(city => (
-                  <option key={city.id} value={city.id}>
-                    {city.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Price Range */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Price Range (₹)
-              </label>
-              <div className="space-y-2">
-                <div className="flex items-center gap-4">
-                  <input
-                    type="number"
-                    value={filters.priceRange[0]}
-                    onChange={(e) => handlePriceChange(parseInt(e.target.value) || 0, filters.priceRange[1])}
-                    placeholder="Min"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-                  />
-                  <span className="text-gray-500">to</span>
-                  <input
-                    type="number"
-                    value={filters.priceRange[1]}
-                    onChange={(e) => handlePriceChange(filters.priceRange[0], parseInt(e.target.value) || 100000)}
-                    placeholder="Max"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-                  />
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100000"
-                  step="1000"
-                  value={filters.priceRange[1]}
-                  onChange={(e) => handlePriceChange(filters.priceRange[0], parseInt(e.target.value))}
-                  className="w-full accent-orange-600"
-                />
-              </div>
-            </div>
-
-            {/* Minimum Experiences */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Minimum Experiences
-              </label>
-              <select
-                value={filters.minExperiences}
-                onChange={(e) => handleMinExperiencesChange(parseInt(e.target.value))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              >
-                <option value="0">Any</option>
-                <option value="3">3+ experiences</option>
-                <option value="5">5+ experiences</option>
-                <option value="8">8+ experiences</option>
-              </select>
-            </div>
-
-            {/* Sort By */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Sort By
-              </label>
-              <select
-                value={filters.sortBy}
-                onChange={(e) => handleSortChange(e.target.value as FilterState['sortBy'])}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              >
-                <option value="newest">Newest First</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
-                <option value="experiences">Most Experiences</option>
-              </select>
-            </div>
+          <input
+            type="range"
+            min="0"
+            max="100000"
+            step="1000"
+            value={filters.priceRange[1]}
+            onChange={(e) => handlePriceChange(filters.priceRange[0], parseInt(e.target.value))}
+            className="w-full accent-orange-600 h-2 cursor-pointer"
+          />
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>₹0</span>
+            <span>₹1L+</span>
           </div>
         </div>
-      </div>
-    </div>
+      </FilterSection>
+
+      {/* Minimum Experiences */}
+      <FilterSection title="Minimum Experiences">
+        <select
+          value={filters.minExperiences}
+          onChange={(e) => handleMinExperiencesChange(parseInt(e.target.value))}
+          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm"
+        >
+          <option value="0">Any</option>
+          <option value="3">3+ experiences</option>
+          <option value="5">5+ experiences</option>
+          <option value="8">8+ experiences</option>
+        </select>
+      </FilterSection>
+
+      {/* Sort By */}
+      <FilterSection title="Sort By">
+        <select
+          value={filters.sortBy}
+          onChange={(e) => handleSortChange(e.target.value as FilterState['sortBy'])}
+          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm"
+        >
+          <option value="newest">Newest First</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="experiences">Most Experiences</option>
+        </select>
+      </FilterSection>
+    </FilterSidebar>
   );
 }

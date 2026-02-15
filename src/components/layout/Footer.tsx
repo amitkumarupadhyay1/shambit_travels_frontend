@@ -9,6 +9,16 @@ const Footer = () => {
     { name: 'Packages', href: '/packages' },
     { name: 'Experiences', href: '/experiences' },
     { name: 'Articles', href: '/articles' },
+    { name: 'About', href: '/about' },
+    { name: 'Contact', href: '/contact' },
+  ];
+
+  const bookingServices = [
+    { name: 'Hotels', href: '/hotels-booking' },
+    { name: 'Railway Tickets', href: '/railway-tickets' },
+    { name: 'Air Tickets', href: '/air-tickets' },
+    { name: 'Bus Tickets', href: '/bus-tickets' },
+    { name: 'Book Taxi', href: '/book-taxi' },
   ];
 
   const legalLinks = [
@@ -82,17 +92,17 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Legal */}
+          {/* Booking Services */}
           <div>
-            <h3 className="font-playfair text-xl font-semibold mb-6">Legal</h3>
+            <h3 className="font-playfair text-xl font-semibold mb-6">Booking Services</h3>
             <ul className="space-y-3">
-              {legalLinks.map((link) => (
-                <li key={link.name}>
+              {bookingServices.map((service) => (
+                <li key={service.name}>
                   <Link
-                    href={link.href}
+                    href={service.href}
                     className="text-gray-300 hover:text-primary-gold transition-colors duration-300"
                   >
-                    {link.name}
+                    {service.name}
                   </Link>
                 </li>
               ))}
@@ -131,9 +141,22 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Bottom Section */}
+        {/* Legal Links Section */}
         <div className="border-t border-gray-700 mt-12 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
+          <div className="flex flex-wrap justify-center gap-6 mb-6">
+            {legalLinks.map((link) => (
+              <Link
+                key={link.name}
+                href={link.href}
+                className="text-gray-400 hover:text-primary-gold text-sm transition-colors duration-300"
+              >
+                {link.name}
+              </Link>
+            ))}
+          </div>
+
+          {/* Bottom Section */}
+          <div className="flex flex-col md:flex-row justify-between items-center pt-6 border-t border-gray-700">
             <p className="text-gray-400 text-sm">
               © 2026 ShamBit. All rights reserved.
             </p>

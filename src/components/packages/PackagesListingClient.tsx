@@ -123,51 +123,61 @@ export default function PackagesListingClient() {
         />
       </div>
 
-      {/* Filters */}
-      <PackageFilters
-        cities={cities}
-        filters={filters}
-        onChange={setFilters}
-        onClear={handleClearFilters}
-      />
+      {/* Desktop: Sidebar Layout | Mobile: Stacked */}
+      <div className="lg:grid lg:grid-cols-[280px_1fr] lg:gap-8">
+        {/* Filters Sidebar */}
+        <aside className="lg:block">
+          <PackageFilters
+            cities={cities}
+            filters={filters}
+            onChange={setFilters}
+            onClear={handleClearFilters}
+            totalCount={packages.length}
+            filteredCount={filteredPackages.length}
+          />
+        </aside>
 
-      {/* Loading State */}
-      {loading && (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-12 h-12 text-orange-600 animate-spin" />
-        </div>
-      )}
+        {/* Main Content */}
+        <div>
+          {/* Loading State */}
+          {loading && (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-12 h-12 text-orange-600 animate-spin" />
+            </div>
+          )}
 
-      {/* Packages Grid */}
-      {!loading && filteredPackages.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredPackages.map(pkg => (
-            <PackageCard key={pkg.id} package={pkg} />
-          ))}
-        </div>
-      )}
+          {/* Packages Grid */}
+          {!loading && filteredPackages.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredPackages.map(pkg => (
+                <PackageCard key={pkg.id} package={pkg} />
+              ))}
+            </div>
+          )}
 
-      {/* Empty State */}
-      {!loading && filteredPackages.length === 0 && (
-        <div className="text-center py-20">
-          <p className="text-gray-500 text-lg mb-4">
-            No packages found matching your criteria.
-          </p>
-          <button
-            onClick={handleClearFilters}
-            className={sacredStyles.button.secondary}
-          >
-            Clear Filters
-          </button>
-        </div>
-      )}
+          {/* Empty State */}
+          {!loading && filteredPackages.length === 0 && (
+            <div className="text-center py-20">
+              <p className="text-gray-500 text-lg mb-4">
+                No packages found matching your criteria.
+              </p>
+              <button
+                onClick={handleClearFilters}
+                className={sacredStyles.button.secondary}
+              >
+                Clear Filters
+              </button>
+            </div>
+          )}
 
-      {/* Results Count */}
-      {!loading && filteredPackages.length > 0 && (
-        <div className="mt-8 text-center text-sm text-gray-600">
-          Showing {filteredPackages.length} of {packages.length} packages
+          {/* Results Count */}
+          {!loading && filteredPackages.length > 0 && (
+            <div className="mt-8 text-center text-sm text-gray-600">
+              Showing {filteredPackages.length} of {packages.length} packages
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

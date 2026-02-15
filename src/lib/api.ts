@@ -558,6 +558,25 @@ class ApiService {
       skipCache: true,
     });
   }
+
+  // Media
+  async getMediaForObject(contentType: string, objectId: number): Promise<MediaItem[]> {
+    return this.fetchApi<MediaItem[]>(
+      `/media/for_object/?content_type=${contentType}&object_id=${objectId}`,
+      { skipCache: true }
+    );
+  }
+}
+
+// Media Response Types
+export interface MediaItem {
+  id: number;
+  file_url: string;
+  file_type: string;
+  title: string;
+  alt_text: string;
+  content_type_name: string;
+  created_at: string;
 }
 
 // Price Calculation Response Types

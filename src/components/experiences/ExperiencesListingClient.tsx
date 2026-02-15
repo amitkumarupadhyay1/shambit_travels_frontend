@@ -257,146 +257,103 @@ export default function ExperiencesListingClient() {
           )}
         </div>
 
-        {/* Active Filter Chips */}
-        {activeFilterCount > 0 && (
-          <div className="mb-6">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-medium text-gray-700">Active Filters:</span>
-              
-              {/* Search chip */}
-              {debouncedSearchQuery && (
-                <FilterChip
-                  label={`Search: "${debouncedSearchQuery}"`}
-                  onRemove={() => handleRemoveFilter('search')}
-                />
-              )}
+        {/* Desktop: Sidebar Layout | Mobile: Stacked */}
+        <div className="lg:grid lg:grid-cols-[280px_1fr] lg:gap-8">
+          {/* Filters Sidebar */}
+          <aside className="lg:block">
+            <ExperienceFilters
+              onFilterChange={handleFilterChange}
+              totalCount={experiences.length}
+              filteredCount={filteredAndSortedExperiences.length}
+            />
+          </aside>
 
-              {/* Category chips */}
-              {filters.category.map((cat) => (
-                <FilterChip
-                  key={cat}
-                  label={formatFilterLabel('category', cat)}
-                  onRemove={() => handleRemoveFilter('category', cat)}
-                />
-              ))}
-
-              {/* Difficulty chips */}
-              {filters.difficulty.map((diff) => (
-                <FilterChip
-                  key={diff}
-                  label={formatFilterLabel('difficulty', diff)}
-                  onRemove={() => handleRemoveFilter('difficulty', diff)}
-                />
-              ))}
-
-              {/* Price range chip */}
-              {(filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) && (
-                <FilterChip
-                  label={`₹${filters.priceRange[0]} - ₹${filters.priceRange[1]}`}
-                  onRemove={() => handleRemoveFilter('price')}
-                />
-              )}
-
-              {/* Clear all button */}
-              <button
-                onClick={handleClearAllFilters}
-                className="text-sm text-orange-600 hover:text-orange-700 font-medium transition-colors ml-2"
-              >
-                Clear All ({activeFilterCount})
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Filters */}
-        <ExperienceFilters
-          onFilterChange={handleFilterChange}
-          totalCount={experiences.length}
-          filteredCount={filteredAndSortedExperiences.length}
-        />
-
-        {/* Sort and Results Count */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <p className="text-sm text-gray-600">
-            Showing <span className="font-semibold">{filteredAndSortedExperiences.length}</span>{' '}
-            of <span className="font-semibold">{experiences.length}</span> experiences
-          </p>
-          <ExperienceSort currentSort={sortBy} onSortChange={handleSortChange} />
-        </div>
-
-        {/* Loading State */}
-        {loading && <SkeletonGrid count={6} />}
-
-        {/* Error State */}
-        {!loading && error && (
-          <div className="text-center py-20">
-            <div className={cn(sacredStyles.card, 'max-w-md mx-auto')}>
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-red-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <h3 className={cn(sacredStyles.heading.h4, 'mb-3')}>
-                Unable to Load Experiences
-              </h3>
-              <p className={cn(sacredStyles.text.body, 'mb-6 text-gray-600')}>
-                {error}
+          {/* Main Content */}
+          <div>
+            {/* Sort and Results Count */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <p className="text-sm text-gray-600">
+                Showing <span className="font-semibold">{filteredAndSortedExperiences.length}</span>{' '}
+                of <span className="font-semibold">{experiences.length}</span> experiences
               </p>
-              <button
-                onClick={() => window.location.reload()}
-                className={sacredStyles.button.primary}
-              >
-                Try Again
-              </button>
+              <ExperienceSort currentSort={sortBy} onSortChange={handleSortChange} />
             </div>
-          </div>
-        )}
 
-        {/* Experiences Grid */}
-        {!loading && !error && filteredAndSortedExperiences.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {filteredAndSortedExperiences.map((exp, index) => (
-              <div
-                key={exp.id}
-                className="animate-in fade-in slide-in-from-bottom-4 duration-500"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <ExperienceCard
-                  experience={exp}
-                  onViewDetails={() => handleViewDetails(exp)}
-                  searchQuery={debouncedSearchQuery}
-                />
+            {/* Loading State */}
+            {loading && <SkeletonGrid count={6} />}
+
+            {/* Error State */}
+            {!loading && error && (
+              <div className="text-center py-20">
+                <div className={cn(sacredStyles.card, 'max-w-md mx-auto')}>
+                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg
+                      className="w-8 h-8 text-red-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className={cn(sacredStyles.heading.h4, 'mb-3')}>
+                    Unable to Load Experiences
+                  </h3>
+                  <p className={cn(sacredStyles.text.body, 'mb-6 text-gray-600')}>
+                    {error}
+                  </p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className={sacredStyles.button.primary}
+                  >
+                    Try Again
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
-        )}
+            )}
 
-        {/* Empty State */}
-        {!loading && !error && filteredAndSortedExperiences.length === 0 && (
-          <EmptyState
-            icon={<Search className="w-10 h-10" />}
-            title="No experiences found"
-            description="We couldn't find any experiences matching your criteria. Try adjusting your filters or search terms."
-            action={
-              activeFilterCount > 0
-                ? {
-                    label: 'Clear All Filters',
-                    onClick: handleClearAllFilters,
-                  }
-                : undefined
-            }
-          />
-        )}
+            {/* Experiences Grid */}
+            {!loading && !error && filteredAndSortedExperiences.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                {filteredAndSortedExperiences.map((exp, index) => (
+                  <div
+                    key={exp.id}
+                    className="animate-in fade-in slide-in-from-bottom-4 duration-500"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <ExperienceCard
+                      experience={exp}
+                      onViewDetails={() => handleViewDetails(exp)}
+                      searchQuery={debouncedSearchQuery}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!loading && !error && filteredAndSortedExperiences.length === 0 && (
+              <EmptyState
+                icon={<Search className="w-10 h-10" />}
+                title="No experiences found"
+                description="We couldn't find any experiences matching your criteria. Try adjusting your filters or search terms."
+                action={
+                  activeFilterCount > 0
+                    ? {
+                        label: 'Clear All Filters',
+                        onClick: handleClearAllFilters,
+                      }
+                    : undefined
+                }
+              />
+            )}
+          </div>
+        </div>
 
         {/* Experience Detail Modal */}
         <ExperienceDetailModal
