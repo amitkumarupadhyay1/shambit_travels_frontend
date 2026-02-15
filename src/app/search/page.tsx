@@ -93,20 +93,22 @@ function SearchResultsContent() {
     <div className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-white">
       <Header />
       
-      {/* Search Header - Sticky */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <UniversalSearchBoxWithSuggestions
-            initialQuery={query}
-            onSearch={handleSearch}
-            variant="header"
-            showSuggestions={false}
-          />
+      {/* Add padding-top to account for fixed header */}
+      <div className="pt-[120px] md:pt-[140px]">
+        {/* Search Header - Sticky */}
+        <div className="bg-white border-b border-gray-200 sticky top-[120px] md:top-[140px] z-40 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <UniversalSearchBoxWithSuggestions
+              initialQuery={query}
+              onSearch={handleSearch}
+              variant="header"
+              showSuggestions={false}
+            />
+          </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search Info */}
         {query && !loading && results && (
           <motion.div
@@ -437,6 +439,7 @@ function SearchResultsContent() {
             })}
           </div>
         )}
+        </div>
       </div>
 
       <Footer />

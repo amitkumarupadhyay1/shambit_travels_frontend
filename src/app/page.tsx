@@ -71,9 +71,10 @@ export default function Home() {
 
   // Cleanup on unmount
   useEffect(() => {
+    const timeoutRef = loadingTimeoutRef;
     return () => {
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
       apiService.cancelAllRequests();
     };

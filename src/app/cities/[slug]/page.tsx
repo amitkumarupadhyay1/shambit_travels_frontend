@@ -103,49 +103,51 @@ export default function CityDetailPage() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-
-      {/* Hero Section */}
-      <section className="relative h-[60vh] min-h-[400px] overflow-hidden">
-        {/* Background Image */}
-        {city.hero_image ? (
-          <div className="absolute inset-0">
-            <Image
-              src={city.hero_image}
-              alt={city.name}
-              fill
-              className="object-cover"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/70" />
-          </div>
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-orange-600 via-amber-500 to-orange-400" />
-        )}
-
-        {/* Content */}
-        <div className="relative h-full flex items-center justify-center text-center px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-4xl"
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white mb-4">
-              <MapPin className="w-4 h-4" />
-              <span className="text-sm font-medium">Destination</span>
+      
+      {/* Add padding-top to account for fixed header */}
+      <div className="pt-[120px] md:pt-[140px]">
+        {/* Hero Section */}
+        <section className="relative h-[60vh] min-h-[400px] overflow-hidden">
+          {/* Background Image */}
+          {city.hero_image ? (
+            <div className="absolute inset-0">
+              <Image
+                src={city.hero_image}
+                alt={city.name}
+                fill
+                className="object-cover"
+                priority
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/70" />
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-              {city.name}
-            </h1>
-            <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto">
-              {city.description.substring(0, 150)}...
-            </p>
-          </motion.div>
-        </div>
-      </section>
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-600 via-amber-500 to-orange-400" />
+          )}
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-12">
+          {/* Content */}
+          <div className="relative h-full flex items-center justify-center text-center px-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="max-w-4xl"
+            >
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white mb-4">
+                <MapPin className="w-4 h-4" />
+                <span className="text-sm font-medium">Destination</span>
+              </div>
+              <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+                {city.name}
+              </h1>
+              <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto">
+                {city.description.substring(0, 150)}...
+              </p>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 py-12">
         {/* About Section */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
@@ -306,6 +308,7 @@ export default function CityDetailPage() {
             </p>
           </button>
         </motion.section>
+        </div>
       </div>
 
       <Footer />
