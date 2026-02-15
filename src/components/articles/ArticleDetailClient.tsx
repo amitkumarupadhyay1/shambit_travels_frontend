@@ -10,7 +10,11 @@ import {
     Bookmark,
     Type,
     X,
-    Heart
+    Heart,
+    Copy,
+    Check,
+    ThumbsDown,
+    Languages
 } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -36,6 +40,19 @@ export default function ArticleDetailClient({ slug }: ArticleDetailClientProps) 
     const [fontFamily, setFontFamily] = useState<FontFamily>('serif');
     const [showAppearanceMenu, setShowAppearanceMenu] = useState(false);
     const [showHeader, setShowHeader] = useState(true);
+
+    // Interaction State
+    const [isLiked, setIsLiked] = useState(false);
+    const [isDisliked, setIsDisliked] = useState(false);
+    const [isBookmarked, setIsBookmarked] = useState(false);
+    const [showShareMenu, setShowShareMenu] = useState(false);
+    const [linkCopied, setLinkCopied] = useState(false);
+    const [showLikeAnimation, setShowLikeAnimation] = useState(false);
+    const [showDislikeAnimation, setShowDislikeAnimation] = useState(false);
+
+    // Translation State
+    const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+    const [currentLanguage, setCurrentLanguage] = useState('en');
 
     // Scroll handling for header visibility
     const { scrollY } = useScroll();
@@ -87,6 +104,76 @@ export default function ArticleDetailClient({ slug }: ArticleDetailClientProps) 
         fetchArticleData();
     }, [slug]);
 
+    // Load static states and apply translation on mount
+    useEffect(() => {
+        if (article) {
+            const likedArticles = JSON.parse(localStorage.getItem('likedArticles') || '[]');
+            const dislikedArticles = JSON.parse(localStorage.getItem('dislikedArticles') || '[]');
+            const bookmarkedArticles = JSON.parse(localStorage.getItem('bookmarkedArticles') || '[]');
+
+            setIsLiked(likedArticles.includes(article.id));
+            setIsDisliked(dislikedArticles.includes(article.id));
+            setIsBookmarked(bookmarkedArticles.includes(article.id));
+
+            // Apply saved translation
+            const savedLang = localStorage.getItem('preferredLanguage');
+            if (savedLang && savedLang !== 'en') {
+                setCurrentLanguage(savedLang);
+                const cookieValue = `/en/${savedLang}`;
+                document.cookie = `googtrans=${cookieValue}; path=/`;
+
+                if (window.location.hostname !== 'localhost') {
+                    document.cookie = `googtrans=${cookieValue}; path=/; domain=${window.location.hostname}`;
+                }
+            }
+        }
+    }, [article]);
+
+    // Save like state to localStorage whenever it changes
+    useEffect(() => {
+        if (article) {
+            const likedArticles = JSON.parse(localStorage.getItem('likedArticles') || '[]');
+
+            if (isLiked && !likedArticles.includes(article.id)) {
+                likedArticles.push(article.id);
+                localStorage.setItem('likedArticles', JSON.stringify(likedArticles));
+            } else if (!isLiked && likedArticles.includes(article.id)) {
+                const filtered = likedArticles.filter((id: number) => id !== article.id);
+                localStorage.setItem('likedArticles', JSON.stringify(filtered));
+            }
+        }
+    }, [isLiked, article]);
+
+    // Save bookmark state to localStorage whenever it changes
+    useEffect(() => {
+        if (article) {
+            const bookmarkedArticles = JSON.parse(localStorage.getItem('bookmarkedArticles') || '[]');
+
+            if (isBookmarked && !bookmarkedArticles.includes(article.id)) {
+                bookmarkedArticles.push(article.id);
+                localStorage.setItem('bookmarkedArticles', JSON.stringify(bookmarkedArticles));
+            } else if (!isBookmarked && bookmarkedArticles.includes(article.id)) {
+                const filtered = bookmarkedArticles.filter((id: number) => id !== article.id);
+                localStorage.setItem('bookmarkedArticles', JSON.stringify(filtered));
+            }
+        }
+    }, [isBookmarked, article]);
+
+    // Save dislike state to localStorage whenever it changes
+    useEffect(() => {
+        if (article) {
+            const dislikedArticles = JSON.parse(localStorage.getItem('dislikedArticles') || '[]');
+
+            if (isDisliked && !dislikedArticles.includes(article.id)) {
+                dislikedArticles.push(article.id);
+                localStorage.setItem('dislikedArticles', JSON.stringify(dislikedArticles));
+            } else if (!isDisliked && dislikedArticles.includes(article.id)) {
+                const filtered = dislikedArticles.filter((id: number) => id !== article.id);
+                localStorage.setItem('dislikedArticles', JSON.stringify(filtered));
+            }
+        }
+    }, [isDisliked, article]);
+
     // Theme Styles
     const themeStyles = {
         light: "bg-white text-gray-900 selection:bg-orange-100 selection:text-orange-900",
@@ -100,7 +187,6 @@ export default function ArticleDetailClient({ slug }: ArticleDetailClientProps) 
                 <div className="w-full max-w-2xl px-6 space-y-8">
                     {/* Engaging Skeleton Loader */}
                     <div className="space-y-4 animate-pulse">
-                        {/* Title Skeleton with Gradient Shimmer */}
                         <div className="h-12 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded-lg w-3/4 mx-auto relative overflow-hidden">
                             <motion.div
                                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
@@ -108,14 +194,10 @@ export default function ArticleDetailClient({ slug }: ArticleDetailClientProps) 
                                 transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
                             />
                         </div>
-
-                        {/* Meta Info Skeleton */}
                         <div className="flex justify-center gap-4">
                             <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
                             <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
                         </div>
-
-                        {/* Image Skeleton */}
                         <div className="aspect-[16/9] bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl relative overflow-hidden shadow-sm">
                             <motion.div
                                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
@@ -126,8 +208,6 @@ export default function ArticleDetailClient({ slug }: ArticleDetailClientProps) 
                                 <div className="w-16 h-16 rounded-full bg-white/50" />
                             </div>
                         </div>
-
-                        {/* Content Skeleton Lines - Staggered */}
                         <div className="space-y-3 pt-4">
                             {[85, 92, 78, 88, 65, 75].map((width, i) => (
                                 <motion.div
@@ -217,18 +297,33 @@ export default function ArticleDetailClient({ slug }: ArticleDetailClientProps) 
                         <Type className="w-4 h-4" />
                     </button>
                     <button
+                        onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+                        className={cn(
+                            "p-2 rounded-full transition-colors relative",
+                            theme === 'dark' ? "hover:bg-white/10 text-gray-300" : "hover:bg-orange-50 text-gray-600 hover:text-orange-600",
+                            showLanguageMenu && (theme === 'dark' ? "bg-white/10 text-orange-400" : "bg-orange-50 text-orange-600")
+                        )}
+                        aria-label="Translate"
+                    >
+                        <Languages className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={() => setIsBookmarked(!isBookmarked)}
                         className={cn(
                             "p-2 rounded-full transition-colors",
-                            theme === 'dark' ? "hover:bg-white/10 text-gray-300 hover:text-orange-400" : "hover:bg-orange-50 text-gray-600 hover:text-orange-600"
+                            theme === 'dark' ? "hover:bg-white/10 text-gray-300 hover:text-orange-400" : "hover:bg-orange-50 text-gray-600 hover:text-orange-600",
+                            isBookmarked && "text-orange-500"
                         )}
                         aria-label="Save"
                     >
-                        <Bookmark className="w-4 h-4" />
+                        <Bookmark className={cn("w-4 h-4", isBookmarked && "fill-current")} />
                     </button>
                     <button
+                        onClick={() => setShowShareMenu(!showShareMenu)}
                         className={cn(
-                            "p-2 -mr-2 rounded-full transition-colors",
-                            theme === 'dark' ? "hover:bg-white/10 text-gray-300" : "hover:bg-orange-50 text-gray-600 hover:text-orange-600"
+                            "p-2 -mr-2 rounded-full transition-colors relative",
+                            theme === 'dark' ? "hover:bg-white/10 text-gray-300" : "hover:bg-orange-50 text-gray-600 hover:text-orange-600",
+                            showShareMenu && "text-orange-500"
                         )}
                         aria-label="Share"
                     >
@@ -257,7 +352,6 @@ export default function ArticleDetailClient({ slug }: ArticleDetailClientProps) 
                             </button>
                         </div>
 
-                        {/* Theme Selection */}
                         <div className="flex gap-2 py-4">
                             <button
                                 onClick={() => setTheme('light')}
@@ -294,7 +388,6 @@ export default function ArticleDetailClient({ slug }: ArticleDetailClientProps) 
                             </button>
                         </div>
 
-                        {/* Font Size & Family */}
                         <div className="space-y-4 pt-2">
                             <div className={cn(
                                 "flex items-center justify-between p-2 rounded-lg",
@@ -346,10 +439,153 @@ export default function ArticleDetailClient({ slug }: ArticleDetailClientProps) 
                 )}
             </AnimatePresence>
 
+            {/* Share Menu Popover */}
+            <AnimatePresence>
+                {showShareMenu && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        className={cn(
+                            "fixed top-16 right-4 z-50 w-64 rounded-xl shadow-2xl border p-3",
+                            theme === 'dark' ? "bg-[#252525] border-white/10 text-white" : "bg-white border-gray-200 text-gray-900"
+                        )}
+                    >
+                        <div className="flex items-center justify-between pb-3 border-b border-gray-200/50 mb-3">
+                            <span className="text-xs font-semibold tracking-wider uppercase opacity-60">Share</span>
+                            <button onClick={() => setShowShareMenu(false)} className="opacity-60 hover:opacity-100">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <button
+                            onClick={() => {
+                                if (article) {
+                                    navigator.clipboard.writeText(window.location.href);
+                                    setLinkCopied(true);
+                                    setTimeout(() => setLinkCopied(false), 2000);
+                                }
+                            }}
+                            className={cn(
+                                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                                theme === 'dark' ? "hover:bg-white/10" : "hover:bg-gray-100"
+                            )}
+                        >
+                            {linkCopied ? (
+                                <Check className="w-4 h-4 text-green-500" />
+                            ) : (
+                                <Copy className="w-4 h-4" />
+                            )}
+                            <span>{linkCopied ? "Link copied!" : "Copy link"}</span>
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Language Menu Popover */}
+            <AnimatePresence>
+                {showLanguageMenu && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.2 }}
+                        className={cn(
+                            "fixed top-16 right-4 z-40 p-4 rounded-2xl shadow-2xl border backdrop-blur-xl",
+                            theme === 'dark'
+                                ? "bg-[#1a1a1a]/95 border-white/10"
+                                : "bg-white/95 border-gray-200"
+                        )}
+                        style={{ width: '280px' }}
+                    >
+                        <div className="space-y-3">
+                            <div className={cn(
+                                "text-sm font-semibold mb-3",
+                                theme === 'dark' ? "text-gray-300" : "text-gray-700"
+                            )}>
+                                Translate Article
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto custom-scrollbar">
+                                {[
+                                    { code: 'en', name: 'English' },
+                                    { code: 'hi', name: 'Hindi' },
+                                    { code: 'ta', name: 'Tamil' },
+                                    { code: 'te', name: 'Telugu' },
+                                    { code: 'gu', name: 'Gujarati' },
+                                    { code: 'ml', name: 'Malayalam' },
+                                    { code: 'mr', name: 'Marathi' },
+                                    { code: 'kn', name: 'Kannada' },
+                                    { code: 'bn', name: 'Bengali' },
+                                    { code: 'pa', name: 'Punjabi' },
+                                    { code: 'es', name: 'Spanish' },
+                                    { code: 'fr', name: 'French' },
+                                    { code: 'de', name: 'German' },
+                                    { code: 'zh-CN', name: 'Chinese' },
+                                    { code: 'ja', name: 'Japanese' },
+                                    { code: 'ar', name: 'Arabic' },
+                                    { code: 'pt', name: 'Portuguese' },
+                                    { code: 'ru', name: 'Russian' },
+                                    { code: 'it', name: 'Italian' },
+                                    { code: 'ko', name: 'Korean' },
+                                    { code: 'tr', name: 'Turkish' },
+                                    { code: 'nl', name: 'Dutch' },
+                                    { code: 'pl', name: 'Polish' },
+                                    { code: 'sv', name: 'Swedish' },
+                                    { code: 'id', name: 'Indonesian' },
+                                    { code: 'th', name: 'Thai' },
+                                    { code: 'vi', name: 'Vietnamese' },
+                                ].map((lang) => (
+                                    <button
+                                        key={lang.code}
+                                        onClick={() => {
+                                            const langCode = lang.code;
+                                            console.log(`[Shambit] User selected language: ${lang.name} (${langCode})`);
+                                            setCurrentLanguage(langCode);
+                                            localStorage.setItem('preferredLanguage', langCode);
+
+                                            // 1. Set the googtrans cookie
+                                            const cookieValue = `/en/${langCode}`;
+                                            document.cookie = `googtrans=${cookieValue}; path=/`;
+
+                                            if (window.location.hostname !== 'localhost') {
+                                                document.cookie = `googtrans=${cookieValue}; path=/; domain=${window.location.hostname}`;
+                                            }
+
+                                            // 2. Trigger via DOM
+                                            const select = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+                                            if (select) {
+                                                select.value = langCode;
+                                                select.dispatchEvent(new Event('change'));
+                                            } else {
+                                                // If we set the cookie, a reload will often force the translation
+                                                if (langCode !== 'en') {
+                                                    window.location.reload();
+                                                }
+                                            }
+
+                                            setShowLanguageMenu(false);
+                                        }}
+                                        className={cn(
+                                            "py-2 px-3 rounded-lg text-sm transition-colors text-left",
+                                            currentLanguage === lang.code
+                                                ? (theme === 'dark' ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-600")
+                                                : (theme === 'dark' ? "hover:bg-white/10 text-gray-300" : "hover:bg-gray-100 text-gray-700")
+                                        )}
+                                    >
+                                        {lang.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Main Content Area */}
             <main className="pt-20 pb-32">
                 <article className="max-w-2xl mx-auto px-6 sm:px-8">
-                    {/* Header Info */}
                     <header className="mb-10 sm:mb-14">
                         <h1 className={cn(
                             "text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-6 tracking-tight",
@@ -372,7 +608,6 @@ export default function ArticleDetailClient({ slug }: ArticleDetailClientProps) 
                         </div>
                     </header>
 
-                    {/* Standard Hero Image (Optional/Standard Size) */}
                     {article.featured_image && (
                         <div className="mb-10 sm:mb-14 rounded-lg overflow-hidden relative aspect-[16/9] bg-gray-100">
                             <Image
@@ -386,7 +621,6 @@ export default function ArticleDetailClient({ slug }: ArticleDetailClientProps) 
                         </div>
                     )}
 
-                    {/* Content */}
                     <div
                         className={cn(
                             "prose max-w-none transition-all duration-300",
@@ -397,7 +631,6 @@ export default function ArticleDetailClient({ slug }: ArticleDetailClientProps) 
                         dangerouslySetInnerHTML={{ __html: article.content || '' }}
                     />
 
-                    {/* Media Gallery */}
                     {mediaItems.length > 0 && (
                         <div className="mt-12 mb-8">
                             <h2 className={cn(
@@ -422,28 +655,88 @@ export default function ArticleDetailClient({ slug }: ArticleDetailClientProps) 
                         </div>
                     )}
 
-                    {/* Article Actions */}
-                    <div className="mt-16 pt-8 border-t border-gray-200/20 flex items-center justify-between">
+                    <div className="mt-16 pt-8 border-t border-gray-200/20 flex items-center justify-center gap-4">
                         <motion.button
-                            whileTap={{ scale: 0.9 }}
-                            whileHover={{ scale: 1.05 }}
+                            onClick={() => {
+                                if (!isLiked) {
+                                    setIsLiked(true);
+                                    setIsDisliked(false);
+                                    setShowLikeAnimation(true);
+                                    setTimeout(() => setShowLikeAnimation(false), 1000);
+                                } else {
+                                    setIsLiked(false);
+                                }
+                            }}
+                            whileTap={{ scale: 0.85 }}
+                            whileHover={{ scale: 1.1 }}
+                            animate={showLikeAnimation ? {
+                                scale: [1, 1.3, 1],
+                                rotate: [0, -10, 10, -10, 0],
+                            } : {}}
+                            transition={{ duration: 0.5, ease: "easeOut" }}
                             className={cn(
-                                "flex items-center gap-2 px-6 py-2.5 rounded-full transition-all text-sm font-medium shadow-sm",
-                                theme === 'dark'
-                                    ? "bg-white/10 hover:bg-white/20 text-white"
-                                    : "bg-gradient-to-r from-orange-500 to-red-500 text-white hover:shadow-md hover:shadow-orange-200"
+                                "relative p-3 rounded-full transition-all duration-300",
+                                isLiked
+                                    ? "text-red-500 bg-red-50 shadow-lg shadow-red-200/50"
+                                    : theme === 'dark'
+                                        ? "text-gray-400 hover:text-red-400 hover:bg-red-950/20"
+                                        : "text-gray-400 hover:text-red-500 hover:bg-red-50"
                             )}
+                            aria-label={isLiked ? "Unlike" : "Like"}
                         >
-                            <Heart className="w-4 h-4 fill-white/20" />
-                            <span>Like Story</span>
+                            <AnimatePresence>
+                                {showLikeAnimation && (
+                                    <>
+                                        {[...Array(8)].map((_, i) => (
+                                            <motion.div
+                                                key={i}
+                                                initial={{ opacity: 1, scale: 0, x: 0, y: 0 }}
+                                                animate={{
+                                                    opacity: [1, 1, 0],
+                                                    scale: [0, 1, 0.5],
+                                                    x: Math.cos((i * Math.PI * 2) / 8) * 40,
+                                                    y: Math.sin((i * Math.PI * 2) / 8) * 40,
+                                                }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ duration: 0.6, ease: "easeOut" }}
+                                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                                            >
+                                                <Heart className="w-3 h-3 fill-red-500 text-red-500" />
+                                            </motion.div>
+                                        ))}
+                                    </>
+                                )}
+                            </AnimatePresence>
+                            <Heart className={cn("w-6 h-6 z-10", isLiked && "fill-current")} />
                         </motion.button>
 
-                        <div className={cn(
-                            "text-sm",
-                            theme === 'dark' ? "text-gray-500" : "text-gray-400"
-                        )}>
-                            1.2k reads
-                        </div>
+                        <motion.button
+                            onClick={() => {
+                                if (!isDisliked) {
+                                    setIsDisliked(true);
+                                    setIsLiked(false);
+                                    setShowDislikeAnimation(true);
+                                    setTimeout(() => setShowDislikeAnimation(false), 600);
+                                } else {
+                                    setIsDisliked(false);
+                                }
+                            }}
+                            whileTap={{ scale: 0.85 }}
+                            whileHover={{ scale: 1.1 }}
+                            animate={showDislikeAnimation ? { x: [-5, 5, -5, 5, 0], opacity: [1, 0.6, 1] } : {}}
+                            transition={{ duration: 0.4 }}
+                            className={cn(
+                                "p-3 rounded-full transition-all duration-300",
+                                isDisliked
+                                    ? "text-blue-500 bg-blue-50 shadow-lg shadow-blue-200/50"
+                                    : theme === 'dark'
+                                        ? "text-gray-400 hover:text-blue-400 hover:bg-blue-950/20"
+                                        : "text-gray-400 hover:text-blue-500 hover:bg-blue-50"
+                            )}
+                            aria-label={isDisliked ? "Remove dislike" : "Dislike"}
+                        >
+                            <ThumbsDown className={cn("w-6 h-6", isDisliked && "fill-current")} />
+                        </motion.button>
                     </div>
 
                     <div className="mt-16 pt-8 border-t border-gray-200/10 text-center">
@@ -458,14 +751,12 @@ export default function ArticleDetailClient({ slug }: ArticleDetailClientProps) 
                 </article>
             </main>
 
-            {/* Footer Navigation */}
             <div className={cn(
                 "border-t py-12",
                 theme === 'dark' ? "border-white/10 bg-[#1a1a1a]" : theme === 'sepia' ? "border-[#433422]/10 bg-[#F8F4E6]" : "border-gray-100 bg-gray-50"
             )}>
                 <div className="max-w-2xl mx-auto px-6">
                     <p className={cn("text-xs font-semibold uppercase tracking-wider mb-8 opacity-50")}>Up Next</p>
-
                     <div className="grid gap-6">
                         {adjacentArticles.next && (
                             <Link href={`/articles/${adjacentArticles.next.slug}`} className="group block">
@@ -480,7 +771,6 @@ export default function ArticleDetailClient({ slug }: ArticleDetailClientProps) 
                                 </p>
                             </Link>
                         )}
-
                         {adjacentArticles.prev && (
                             <Link href={`/articles/${adjacentArticles.prev.slug}`} className="group block opacity-60 hover:opacity-100 transition-opacity mt-4 text-sm">
                                 <span className="flex items-center gap-1">
