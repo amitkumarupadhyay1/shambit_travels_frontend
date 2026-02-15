@@ -66,7 +66,11 @@ body {
 
 /* Typography & Utilities */
 .font-playfair {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-playfair), 'Playfair Display', serif;
+}
+
+.font-source-serif {
+  font-family: var(--font-source-serif), 'Source Serif 4', serif;
 }
 
 .will-change-transform {

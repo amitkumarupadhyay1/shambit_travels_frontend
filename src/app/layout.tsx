@@ -15,6 +15,18 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+import { Playfair_Display, Source_Serif_4 } from "next/font/google";
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+});
+
+const sourceSerif = Source_Serif_4({
+  subsets: ["latin"],
+  variable: "--font-source-serif",
+});
+
 export const metadata: Metadata = {
   title: "ShamBit - Discover India's Spiritual Heritage",
   description: "Discover India's spiritual heritage through curated travel experiences. From sacred temples to cultural immersion, we craft journeys that touch the soul.",
@@ -40,7 +52,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} ${sourceSerif.variable} antialiased`}
       >
         <SessionProvider>
           <ComparisonProvider>
