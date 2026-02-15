@@ -49,10 +49,10 @@ export default function ContactForm() {
     // Simulate form submission (replace with actual API call)
     try {
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      
+
       // TODO: Replace with actual API call
       // await apiService.submitContactForm(formData);
-      
+
       setIsSuccess(true);
       setFormData({
         name: '',
@@ -82,7 +82,7 @@ export default function ContactForm() {
         </div>
         <h3 className={cn(sacredStyles.heading.h4, 'mb-2')}>Message Sent Successfully!</h3>
         <p className={sacredStyles.text.body}>
-          Thank you for contacting us. We'll get back to you within 24 hours.
+          Thank you for contacting us. We&apos;ll get back to you within 24 hours.
         </p>
         <button
           onClick={() => setIsSuccess(false)}

@@ -64,8 +64,8 @@ export default function ExperiencesListingClient() {
         setExperiences(data);
       } catch (err) {
         console.error('Failed to load experiences:', err);
-        const errorMessage = err instanceof Error 
-          ? err.message 
+        const errorMessage = err instanceof Error
+          ? err.message
           : 'Failed to load experiences. Please try again.';
         setError(errorMessage);
       } finally {
@@ -175,42 +175,7 @@ export default function ExperiencesListingClient() {
   const handleClearAllFilters = useCallback(() => {
     setSearchQuery('');
     setDebouncedSearchQuery('');
-    setFilters({ category: [], difficulty: [], priceRange: [0, 100000] });
   }, []);
-
-  // Remove individual filter
-  const handleRemoveFilter = useCallback((type: string, value?: string) => {
-    if (type === 'search') {
-      setSearchQuery('');
-      setDebouncedSearchQuery('');
-    } else if (type === 'category' && value) {
-      setFilters((prev) => ({
-        ...prev,
-        category: prev.category.filter((c) => c !== value),
-      }));
-    } else if (type === 'difficulty' && value) {
-      setFilters((prev) => ({
-        ...prev,
-        difficulty: prev.difficulty.filter((d) => d !== value),
-      }));
-    } else if (type === 'price') {
-      setFilters((prev) => ({
-        ...prev,
-        priceRange: [0, 100000],
-      }));
-    }
-  }, []);
-
-  // Format filter label
-  const formatFilterLabel = (type: string, value: string) => {
-    if (type === 'category') {
-      return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
-    }
-    if (type === 'difficulty') {
-      return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
-    }
-    return value;
-  };
 
   return (
     <>
@@ -345,9 +310,9 @@ export default function ExperiencesListingClient() {
                 action={
                   activeFilterCount > 0
                     ? {
-                        label: 'Clear All Filters',
-                        onClick: handleClearAllFilters,
-                      }
+                      label: 'Clear All Filters',
+                      onClick: handleClearAllFilters,
+                    }
                     : undefined
                 }
               />
@@ -360,7 +325,7 @@ export default function ExperiencesListingClient() {
           experience={selectedExperience}
           isOpen={isModalOpen}
           onClose={handleCloseModal}
-          onToggle={() => {}} // No selection functionality on standalone page
+          onToggle={() => { }} // No selection functionality on standalone page
           isSelected={false}
           isStandalone={true} // This is the standalone experiences page
         />
@@ -370,37 +335,6 @@ export default function ExperiencesListingClient() {
   );
 }
 
-// Filter Chip Component - Memoized for performance
-interface FilterChipProps {
-  label: string;
-  onRemove: () => void;
-}
-
-const FilterChip = memo(function FilterChip({ label, onRemove }: FilterChipProps) {
-  return (
-    <div className={cn(
-      'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium',
-      'bg-orange-50 text-orange-700 border border-orange-200',
-      'transition-all duration-200 ease-out',
-      'hover:bg-orange-100 hover:border-orange-300 hover:shadow-sm',
-      'animate-in fade-in slide-in-from-left-2 duration-200'
-    )}>
-      <span>{label}</span>
-      <button
-        onClick={onRemove}
-        className={cn(
-          'rounded-full p-0.5 transition-all duration-200',
-          'hover:bg-orange-200 hover:scale-110',
-          'focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1'
-        )}
-        aria-label={`Remove ${label} filter`}
-      >
-        <X className="w-3.5 h-3.5" />
-      </button>
-    </div>
-  );
-});
-
 interface ExperienceCardProps {
   experience: Experience;
   onViewDetails: () => void;
@@ -408,17 +342,17 @@ interface ExperienceCardProps {
 }
 
 // Memoized ExperienceCard to prevent unnecessary re-renders
-const ExperienceCard = memo(function ExperienceCard({ 
-  experience, 
-  onViewDetails, 
-  searchQuery = '' 
+const ExperienceCard = memo(function ExperienceCard({
+  experience,
+  onViewDetails,
+  searchQuery = ''
 }: ExperienceCardProps) {
   const [isHovered, setIsHovered] = useState(false);
-  
+
   // Memoize the highlight function to avoid recreating on every render
   const highlightText = useCallback((text: string, query: string) => {
     if (!query) return text;
-    
+
     const parts = text.split(new RegExp(`(${query})`, 'gi'));
     return parts.map((part, index) =>
       part.toLowerCase() === query.toLowerCase() ? (

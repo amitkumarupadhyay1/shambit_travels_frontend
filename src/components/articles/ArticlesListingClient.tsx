@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Article, City, apiService, MediaItem } from '@/lib/api';
+import { Article, City, apiService } from '@/lib/api';
 import { cn, sacredStyles } from '@/lib/utils';
 import { Loader2, Calendar, User, MapPin, Search, X, BookOpen } from 'lucide-react';
 import Link from 'next/link';
@@ -37,7 +37,7 @@ export default function ArticlesListingClient() {
           apiService.getArticles(),
           apiService.getCities(),
         ]);
-        
+
         // Fetch media for each article
         const articlesWithMedia = await Promise.all(
           articlesData.map(async (article) => {
@@ -53,7 +53,7 @@ export default function ArticlesListingClient() {
             }
           })
         );
-        
+
         setArticles(articlesWithMedia);
         setCities(citiesData);
       } catch (err) {
@@ -129,7 +129,7 @@ export default function ArticlesListingClient() {
           </h1>
           <p className={cn(sacredStyles.text.body, 'max-w-2xl')}>
             Explore our collection of travel guides, spiritual insights, and cultural stories
-            from India's most sacred destinations.
+            from India&apos;s most sacred destinations.
           </p>
         </div>
 

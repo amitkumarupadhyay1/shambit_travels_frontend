@@ -35,6 +35,10 @@ export default function Home() {
           setSelectedCity(defaultCity);
         }
       } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log('Request cancelled');
+          return;
+        }
         console.error('Failed to load default city:', error);
       } finally {
         setIsLoadingDefaultCity(false);
@@ -47,7 +51,7 @@ export default function Home() {
   // Handle city selection
   const handleCitySelect = (city: City | null) => {
     if (city?.id === selectedCity?.id) return; // Don't reload if same city
-    
+
     // Cancel previous loading timeout
     if (loadingTimeoutRef.current) {
       clearTimeout(loadingTimeoutRef.current);
@@ -55,7 +59,7 @@ export default function Home() {
 
     // Cancel any pending API requests
     apiService.cancelAllRequests();
-    
+
     setSelectedCity(city);
   };
 
@@ -64,7 +68,7 @@ export default function Home() {
     if (!selectedCity) return;
 
     setIsLoadingCityContent(true);
-    
+
     // Navigate to city detail page
     router.push(`/cities/${selectedCity.slug}`);
   };
@@ -83,26 +87,26 @@ export default function Home() {
   return (
     <main className="min-h-screen relative bg-white">
       <Header />
-      
+
       {/* Hero Section with City Selector */}
-      <HeroSection 
-        onCitySelect={handleCitySelect} 
+      <HeroSection
+        onCitySelect={handleCitySelect}
         initialCity={selectedCity}
         isLoadingDefaultCity={isLoadingDefaultCity}
         onExploreClick={handleExploreClick}
         isExploreLoading={isLoadingCityContent}
       />
-      
+
       {/* How It Works - Optimized spacing and responsive design */}
       <div className="w-full">
         <HowItWorksSection />
       </div>
-      
+
       {/* Services - Optimized spacing and responsive design */}
       <div className="w-full">
         <ServicesSection />
       </div>
-      
+
       {/* Content Sections with Loading Overlay */}
       <div ref={contentRef} className="relative">
         {/* Loading Overlay */}
@@ -138,9 +142,9 @@ export default function Home() {
         )}
         */}
       </div>
-      
+
       <Footer />
-      
+
       {/* Backend Status Indicator (development only) */}
       <BackendStatus />
     </main>

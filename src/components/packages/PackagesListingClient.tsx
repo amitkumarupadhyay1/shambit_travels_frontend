@@ -27,7 +27,7 @@ export default function PackagesListingClient() {
       setLoading(true);
       try {
         const [packagesData, citiesData] = await Promise.all([
-          filters.cityId 
+          filters.cityId
             ? apiService.getPackagesByCity(filters.cityId)
             : apiService.getPackages(),
           apiService.getCities(),
@@ -35,6 +35,7 @@ export default function PackagesListingClient() {
         setPackages(packagesData);
         setCities(citiesData);
       } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') return;
         console.error('Failed to load packages:', error);
       } finally {
         setLoading(false);
@@ -104,7 +105,7 @@ export default function PackagesListingClient() {
   };
 
   return (
-    <div className={cn(sacredStyles.container, "pt-32 pb-24 md:pt-40 md:pb-32")}>
+    <div className={cn(sacredStyles.container, "pt-4 pb-12 md:pt-8 md:pb-20")}>
       {/* Header */}
       <div className="mb-12">
         <h1 className={cn(sacredStyles.heading.h1, "mb-4")}>
@@ -212,7 +213,7 @@ function PackageCard({ package: pkg }: PackageCardProps) {
             <div className="absolute inset-0 flex items-center justify-center">
               <MapPin className="w-16 h-16 text-orange-600/40" />
             </div>
-            
+
             {/* Price Badge */}
             <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1">
               <span className="font-bold text-orange-600">

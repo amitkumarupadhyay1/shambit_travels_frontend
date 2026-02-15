@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Metadata } from 'next';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -14,17 +15,17 @@ export default function AboutPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-orange-50/30 to-white">
       <Header />
-      <div className="pt-[120px] md:pt-[140px]">
-        <div className={cn(sacredStyles.container, 'py-16 md:py-24')}>
+      <div className="pt-28 sm:pt-32 lg:pt-32">
+        <div className={cn(sacredStyles.container, 'py-8 md:py-12')}>
           {/* Hero Section */}
           <div className="max-w-4xl mx-auto text-center mb-16">
             <h1 className={cn(sacredStyles.heading.h1, 'mb-6')}>
               About <span className="sacred-gradient-text">ShamBit</span>
             </h1>
             <p className={cn(sacredStyles.text.body, 'text-gray-700 text-lg')}>
-              Your trusted companion for spiritual journeys across India's most sacred
+              Your trusted companion for spiritual journeys across India&apos;s most sacred
               destinations. We craft meaningful travel experiences that connect you with
-              India's rich cultural and spiritual heritage.
+              India&apos;s rich cultural and spiritual heritage.
             </p>
           </div>
 
@@ -37,7 +38,7 @@ export default function AboutPage() {
               <h2 className={cn(sacredStyles.heading.h2, 'mb-4')}>Our Mission</h2>
             </div>
             <p className={cn(sacredStyles.text.body, 'text-center max-w-3xl mx-auto')}>
-              At ShamBit, we believe that travel is more than just visiting places—it's about
+              At ShamBit, we believe that travel is more than just visiting places—it&apos;s about
               experiencing transformation, connecting with ancient wisdom, and discovering the
               divine within. Our mission is to make spiritual travel accessible, authentic, and
               deeply meaningful for every seeker.
@@ -54,7 +55,7 @@ export default function AboutPage() {
             <ValueCard
               icon={<Globe className="w-8 h-8" />}
               title="Sustainable Travel"
-              description="We're committed to responsible tourism that respects local communities and preserves sacred sites for future generations."
+              description="We&apos;re committed to responsible tourism that respects local communities and preserves sacred sites for future generations."
             />
             <ValueCard
               icon={<Award className="w-8 h-8" />}
@@ -68,19 +69,19 @@ export default function AboutPage() {
             <h2 className={cn(sacredStyles.heading.h2, 'mb-6 text-center')}>Our Story</h2>
             <div className="space-y-4 max-w-3xl mx-auto">
               <p className={sacredStyles.text.body}>
-                ShamBit was born from a deep love for India's spiritual heritage and a desire to
+                ShamBit was born from a deep love for India&apos;s spiritual heritage and a desire to
                 share its transformative power with the world. Founded in Ayodhya, the sacred
                 birthplace of Lord Ram, we understand the profound impact that spiritual travel
-                can have on one's life.
+                can have on one&apos;s life.
               </p>
               <p className={sacredStyles.text.body}>
                 What started as a small initiative to help pilgrims explore Ayodhya has grown
-                into a comprehensive platform offering curated spiritual journeys across India's
+                into a comprehensive platform offering curated spiritual journeys across India&apos;s
                 most revered destinations—from the ghats of Varanasi to the temples of South
                 India, from the Himalayan ashrams to the coastal shrines.
               </p>
               <p className={sacredStyles.text.body}>
-                Today, we're proud to serve thousands of travelers seeking authentic spiritual
+                Today, we&apos;re proud to serve thousands of travelers seeking authentic spiritual
                 experiences, helping them create memories that last a lifetime and connections
                 that transcend the physical journey.
               </p>
@@ -111,12 +112,12 @@ export default function AboutPage() {
               Explore our curated packages and start planning your spiritual adventure today.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="/packages" className={sacredStyles.button.primary}>
+              <Link href="/packages" className={sacredStyles.button.primary}>
                 Browse Packages
-              </a>
-              <a href="/contact" className={sacredStyles.button.secondary}>
+              </Link>
+              <Link href="/contact" className={sacredStyles.button.secondary}>
                 Contact Us
-              </a>
+              </Link>
             </div>
           </div>
         </div>

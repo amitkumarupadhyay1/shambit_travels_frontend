@@ -28,8 +28,8 @@ export default function NotFound() {
               Page Not Found
             </h1>
             <p className={cn(sacredStyles.text.body, 'mb-8 text-gray-600 text-lg')}>
-              Oops! It seems you've wandered off the spiritual path. The page you're looking
-              for doesn't exist or has been moved.
+              Oops! It seems you&apos;ve wandered off the spiritual path. The page you&apos;re looking
+              for doesn&apos;t exist or has been moved.
             </p>
 
             {/* Search Bar */}

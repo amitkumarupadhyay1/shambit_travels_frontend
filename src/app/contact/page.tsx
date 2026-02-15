@@ -15,15 +15,15 @@ export default function ContactPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-orange-50/30 to-white">
       <Header />
-      <div className="pt-[120px] md:pt-[140px]">
-        <div className={cn(sacredStyles.container, 'py-16 md:py-24')}>
+      <div className="pt-28 sm:pt-32 lg:pt-32">
+        <div className={cn(sacredStyles.container, 'py-8 md:py-12')}>
           {/* Header */}
           <div className="max-w-4xl mx-auto text-center mb-16">
             <h1 className={cn(sacredStyles.heading.h1, 'mb-6')}>
               Get in <span className="sacred-gradient-text">Touch</span>
             </h1>
             <p className={cn(sacredStyles.text.body, 'text-gray-700 text-lg')}>
-              Have questions about your spiritual journey? We're here to help you plan the
+              Have questions about your spiritual journey? We&apos;re here to help you plan the
               perfect pilgrimage experience.
             </p>
           </div>
@@ -33,7 +33,7 @@ export default function ContactPage() {
             <div className="lg:col-span-1 space-y-6">
               <div className={sacredStyles.card}>
                 <h2 className={cn(sacredStyles.heading.h3, 'mb-6')}>Contact Information</h2>
-                
+
                 <div className="space-y-6">
                   <ContactInfo
                     icon={<Mail className="w-5 h-5" />}
@@ -41,27 +41,27 @@ export default function ContactPage() {
                     content="support@shambit.com"
                     href="mailto:support@shambit.com"
                   />
-                  
+
                   <ContactInfo
                     icon={<Phone className="w-5 h-5" />}
                     title="Phone"
                     content="+91 9005457111"
                     href="tel:+919005457111"
                   />
-                  
+
                   <ContactInfo
                     icon={<MessageCircle className="w-5 h-5" />}
                     title="WhatsApp"
                     content="+91 9005457111"
                     href="https://wa.me/919005457111"
                   />
-                  
+
                   <ContactInfo
                     icon={<MapPin className="w-5 h-5" />}
                     title="Location"
                     content="Ayodhya, Uttar Pradesh, India"
                   />
-                  
+
                   <ContactInfo
                     icon={<Clock className="w-5 h-5" />}
                     title="Business Hours"

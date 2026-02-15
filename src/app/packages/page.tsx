@@ -12,7 +12,7 @@ export default function PackagesPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-orange-50/30 to-white">
       <Header />
-      <div className="pt-[120px] md:pt-[140px]">
+      <div className="pt-28 sm:pt-32 lg:pt-32">
         <PackagesListingClient />
       </div>
       <Footer />

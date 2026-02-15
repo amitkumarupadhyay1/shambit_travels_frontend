@@ -8,26 +8,26 @@ const getApiBaseUrl = (): string => {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
-  
+
   // Server-side rendering: use localhost
   if (typeof window === 'undefined') {
     return 'http://localhost:8000/api';
   }
-  
+
   // Client-side: detect environment
   const hostname = window.location.hostname;
-  
+
   // Production (Railway)
   if (hostname.includes('railway.app') || hostname.includes('vercel.app')) {
     return 'https://shambit.up.railway.app/api';
   }
-  
+
   // Local network access (mobile testing)
   // If accessing via IP address (e.g., 192.168.x.x), use the same IP for backend
   if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
     return `http://${hostname}:8000/api`;
   }
-  
+
   // Default: localhost
   return 'http://localhost:8000/api';
 };
@@ -84,6 +84,7 @@ export interface Article {
   title: string;
   slug: string;
   excerpt?: string;
+  content: string;
   author: string;
   city_name?: string;
   featured_image?: string;
@@ -117,13 +118,13 @@ export interface Experience {
   max_participants: number;
   difficulty_level: "EASY" | "MODERATE" | "HARD";
   category:
-    | "CULTURAL"
-    | "ADVENTURE"
-    | "FOOD"
-    | "SPIRITUAL"
-    | "NATURE"
-    | "ENTERTAINMENT"
-    | "EDUCATIONAL";
+  | "CULTURAL"
+  | "ADVENTURE"
+  | "FOOD"
+  | "SPIRITUAL"
+  | "NATURE"
+  | "ENTERTAINMENT"
+  | "EDUCATIONAL";
   city_name: string | null;
   created_at: string;
   updated_at: string;
@@ -169,12 +170,12 @@ class ApiService {
   private getFromCache<T>(endpoint: string): T | null {
     const cacheKey = this.getCacheKey(endpoint);
     const entry = this.cache.get(cacheKey) as CacheEntry<T> | undefined;
-    
+
     if (entry && this.isCacheValid(entry)) {
       console.log(`💾 Cache hit for ${endpoint}`);
       return entry.data;
     }
-    
+
     return null;
   }
 
@@ -194,7 +195,7 @@ class ApiService {
   public cancelRequest(endpoint: string): void {
     const controller = this.abortControllers.get(endpoint);
     if (controller) {
-      controller.abort();
+      controller.abort('Request cancelled');
       this.abortControllers.delete(endpoint);
       this.pendingRequests.delete(endpoint);
       console.log(`🚫 Request cancelled for ${endpoint}`);
@@ -202,7 +203,7 @@ class ApiService {
   }
 
   public cancelAllRequests(): void {
-    this.abortControllers.forEach((controller) => controller.abort());
+    this.abortControllers.forEach((controller) => controller.abort('All requests cancelled'));
     this.abortControllers.clear();
     this.pendingRequests.clear();
     console.log('🚫 All requests cancelled');
@@ -244,7 +245,7 @@ class ApiService {
 
   private async fetchApi<T>(endpoint: string, options?: RequestInit & { skipCache?: boolean }): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
-    
+
     // Check cache first (unless skipCache is true)
     if (!options?.skipCache) {
       const cachedData = this.getFromCache<T>(endpoint);
@@ -261,14 +262,14 @@ class ApiService {
     }
 
     console.log(`🔗 API Call: ${url}`);
-    
+
     // Create abort controller for this request
     const controller = new AbortController();
     this.abortControllers.set(endpoint, controller);
 
     const requestPromise = (async () => {
       let lastError: Error | null = null;
-      
+
       for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
         try {
           // Add delay for retries (exponential backoff)
@@ -280,7 +281,7 @@ class ApiService {
 
           // Get auth token if available - use token manager for auto-refresh
           const token = await tokenManager.getValidAccessToken();
-          
+
           const headers: Record<string, string> = {
             'Content-Type': 'application/json',
           };
@@ -310,7 +311,7 @@ class ApiService {
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: 'Unknown error' })) as ApiError;
             console.error(`❌ API Error Response for ${endpoint}:`, errorData);
-            
+
             // Check if we should retry
             if (this.isRetryableError(response.status) && attempt < this.MAX_RETRIES - 1) {
               lastError = new ApiException(
@@ -320,7 +321,7 @@ class ApiService {
               );
               continue; // Retry
             }
-            
+
             // No retry, throw user-friendly error
             throw new ApiException(
               this.getUserFriendlyErrorMessage(response.status, errorData),
@@ -331,21 +332,21 @@ class ApiService {
 
           const data = await response.json();
           console.log(`✅ Data received for ${endpoint}:`, data);
-          
+
           // Cache the response
           this.setCache(endpoint, data);
-          
+
           return data;
         } catch (error) {
           if (error instanceof Error && error.name === 'AbortError') {
             console.log(`🚫 Request aborted for ${endpoint}`);
             throw error;
           }
-          
+
           // If it's already an ApiException, just store it
           if (error instanceof ApiException) {
             lastError = error;
-            
+
             // Don't retry if it's not a retryable error
             if (!this.isRetryableError(error.status)) {
               throw error;
@@ -353,12 +354,12 @@ class ApiService {
           } else {
             // Network error or other error
             lastError = new Error(
-              error instanceof Error 
-                ? `Network error: ${error.message}` 
+              error instanceof Error
+                ? `Network error: ${error.message}`
                 : 'An unexpected error occurred'
             );
           }
-          
+
           // If this was the last attempt, throw the error
           if (attempt === this.MAX_RETRIES - 1) {
             console.error(`❌ API call failed after ${this.MAX_RETRIES} attempts for ${endpoint}:`, lastError);
@@ -366,7 +367,7 @@ class ApiService {
           }
         }
       }
-      
+
       // This should never be reached, but TypeScript needs it
       throw lastError || new Error('Request failed');
     })();
@@ -416,6 +417,12 @@ class ApiService {
       { skipCache: true }
     );
     return response.results;
+  }
+
+  async getArticle(slug: string): Promise<Article> {
+    return this.fetchApi<Article>(`/articles/${slug}/`, {
+      skipCache: true,
+    });
   }
 
   // Packages
@@ -541,7 +548,7 @@ class ApiService {
     }
 
     const endpoint = `/search/?${params.toString()}`;
-    
+
     console.log('🔍 universalSearch called:', { query, options, endpoint });
 
     const response = await this.fetchApi<SearchResponse>(endpoint, {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { City, apiService, MediaItem } from '@/lib/api';
+import { City, apiService } from '@/lib/api';
 import { cn, sacredStyles } from '@/lib/utils';
 import { Loader2, MapPin, Search, X } from 'lucide-react';
 import Link from 'next/link';
@@ -32,7 +32,7 @@ export default function DestinationsListingClient() {
       setError(null);
       try {
         const citiesData = await apiService.getCities();
-        
+
         // Fetch media for each city
         const citiesWithMedia = await Promise.all(
           citiesData.map(async (city) => {
@@ -48,7 +48,7 @@ export default function DestinationsListingClient() {
             }
           })
         );
-        
+
         setCities(citiesWithMedia);
       } catch (err) {
         console.error('Failed to load cities:', err);
@@ -110,7 +110,7 @@ export default function DestinationsListingClient() {
             Explore <span className="sacred-gradient-text">Destinations</span>
           </h1>
           <p className={cn(sacredStyles.text.body, 'max-w-2xl')}>
-            Discover India's most sacred and spiritual destinations. Each city offers unique
+            Discover India&apos;s most sacred and spiritual destinations. Each city offers unique
             experiences, rich cultural heritage, and divine connections.
           </p>
         </div>
