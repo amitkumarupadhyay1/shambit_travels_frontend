@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -16,6 +17,7 @@ import { City, apiService } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 
 export default function Home() {
+  const router = useRouter();
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [isLoadingDefaultCity, setIsLoadingDefaultCity] = useState(true);
   const [isLoadingCityContent, setIsLoadingCityContent] = useState(false);
@@ -42,7 +44,7 @@ export default function Home() {
     loadDefaultCity();
   }, []);
 
-  // Handle city selection with loading animation
+  // Handle city selection
   const handleCitySelect = (city: City | null) => {
     if (city?.id === selectedCity?.id) return; // Don't reload if same city
     
@@ -54,32 +56,17 @@ export default function Home() {
     // Cancel any pending API requests
     apiService.cancelAllRequests();
     
-    setIsLoadingCityContent(true);
     setSelectedCity(city);
-    
-    // Set minimum loading time for smooth UX (but will wait for actual API calls)
-    loadingTimeoutRef.current = setTimeout(() => {
-      setIsLoadingCityContent(false);
-    }, 1500);
   };
 
-  // Scroll to content sections and trigger loading
-  const scrollToContent = () => {
+  // Navigate to city page when explore button is clicked
+  const handleExploreClick = () => {
     if (!selectedCity) return;
 
-    // Show loading state
     setIsLoadingCityContent(true);
-
-    // Scroll to content
-    contentRef.current?.scrollIntoView({ 
-      behavior: 'smooth', 
-      block: 'start' 
-    });
-
-    // Hide loading after scroll completes
-    setTimeout(() => {
-      setIsLoadingCityContent(false);
-    }, 1000);
+    
+    // Navigate to city detail page
+    router.push(`/cities/${selectedCity.slug}`);
   };
 
   // Cleanup on unmount
@@ -101,7 +88,7 @@ export default function Home() {
         onCitySelect={handleCitySelect} 
         initialCity={selectedCity}
         isLoadingDefaultCity={isLoadingDefaultCity}
-        onExploreClick={scrollToContent}
+        onExploreClick={handleExploreClick}
         isExploreLoading={isLoadingCityContent}
       />
       
