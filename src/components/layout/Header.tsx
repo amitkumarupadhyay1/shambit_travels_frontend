@@ -78,9 +78,17 @@ const Header = () => {
           {/* Right Side Actions */}
           <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Search Button */}
-            <button
+            <div
               onClick={() => setIsSearchOpen(true)}
-              className="hidden sm:flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors touch-manipulation group"
+              className="hidden sm:flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors touch-manipulation group cursor-pointer"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setIsSearchOpen(true);
+                }
+              }}
               aria-label="Search"
             >
               <Search className="w-5 h-5" />
@@ -88,8 +96,8 @@ const Header = () => {
               <kbd className="hidden lg:inline-flex items-center gap-1 px-2 py-1 text-xs font-mono bg-gray-100 text-gray-600 rounded border border-gray-200 group-hover:border-orange-300">
                 <span>⌘</span>K
               </kbd>
-            </button>
-            
+            </div>
+
             {/* Mobile Search Button */}
             <button
               onClick={() => setIsSearchOpen(true)}
@@ -132,7 +140,7 @@ const Header = () => {
                 className="fixed inset-0 bg-black/50 z-50"
                 onClick={() => setIsSearchOpen(false)}
               />
-              
+
               {/* Search Box */}
               <motion.div
                 initial={{ opacity: 0, y: -20 }}

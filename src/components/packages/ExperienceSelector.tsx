@@ -180,14 +180,30 @@ interface ExperienceCardProps {
 }
 
 function ExperienceCard({ experience, selected, onToggle, onViewDetails, disabled = false }: ExperienceCardProps) {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onToggle();
+    }
+  };
+
+  const handleClick = () => {
+    if (!disabled) {
+      onToggle();
+    }
+  };
+
   return (
-    <button
-      onClick={onToggle}
-      disabled={disabled}
+    <div
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
       className={cn(
-        "relative p-4 rounded-xl border-2 transition-all duration-200 text-left",
+        "relative p-4 rounded-xl border-2 transition-all duration-200 text-left cursor-pointer outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2",
         "hover:shadow-md",
-        disabled && "opacity-50 cursor-not-allowed",
+        disabled && "opacity-50 cursor-not-allowed pointer-events-none",
         selected
           ? "border-orange-600 bg-orange-50/50"
           : "border-gray-200 bg-white hover:border-orange-300"
@@ -220,14 +236,17 @@ function ExperienceCard({ experience, selected, onToggle, onViewDetails, disable
             {formatCurrency(experience.base_price)}
           </span>
           <button
-            onClick={onViewDetails}
-            className="flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 font-medium"
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewDetails(e);
+            }}
+            className="flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 font-medium z-10 relative p-1 rounded hover:bg-orange-50 transition-colors pointer-events-auto"
           >
             <Info className="w-4 h-4" />
             View Details
           </button>
         </div>
       </div>
-    </button>
+    </div>
   );
 }

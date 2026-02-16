@@ -1,14 +1,15 @@
 import { DefaultSession } from "next-auth"
 
 declare module "next-auth" {
-    interface Session {
+    interface Session extends Record<string, unknown> {
         accessToken?: string
+        refreshToken?: string
         user: {
             id: string
         } & DefaultSession["user"]
     }
 
-    interface User {
+    interface User extends Record<string, unknown> {
         accessToken?: string
         refreshToken?: string
         id: string

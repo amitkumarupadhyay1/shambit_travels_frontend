@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { PriceCalculation, apiService, Package } from '@/lib/api';
 import { cn, sacredStyles, formatCurrency } from '@/lib/utils';
 import { Loader2, ShoppingCart, AlertCircle } from 'lucide-react';
-import BookingModal from '../bookings/BookingModal';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { storeSelections } from '@/lib/package-selections';
+// import TravelerDetailsModal from './TravelerDetailsModal'; // REMOVED
 
 interface PriceCalculatorProps {
   packageSlug: string;
@@ -25,10 +27,11 @@ export default function PriceCalculator({
   isValid,
 }: PriceCalculatorProps) {
   const router = useRouter();
+  const { status } = useSession();
   const [price, setPrice] = useState<PriceCalculation | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showBookingModal, setShowBookingModal] = useState(false);
+  // const [showTravelerModal, setShowTravelerModal] = useState(false); // REMOVED
 
   // Debounce price calculation
   useEffect(() => {
@@ -62,6 +65,40 @@ export default function PriceCalculator({
     const timer = setTimeout(calculatePrice, 500);
     return () => clearTimeout(timer);
   }, [packageSlug, selections, isValid]);
+
+  const handleAddToPackage = () => {
+    // Check authentication status
+    if (status === 'unauthenticated') {
+      // Save current package state to sessionStorage for post-login restoration
+      sessionStorage.setItem('pendingBooking', JSON.stringify({
+        packageSlug,
+        packageId: packageData.id,
+        packageName: packageData.name,
+        selections,
+        totalPrice: price?.total_price,
+      }));
+
+      // Redirect to login with return URL
+      router.push(`/login?returnUrl=${encodeURIComponent(`/packages/${packageSlug}`)}`);
+    } else if (status === 'authenticated') {
+      // Store selections using the new utility
+      storeSelections(
+        packageData.id,
+        packageSlug,
+        selections.experiences,
+        selections.hotel!,
+        selections.transport!
+      );
+
+      console.log('Selections stored, redirecting with intent=book');
+
+      // Redirect to same page with intent param to trigger PackageDetailClient logic
+      // Using window.location to ensure full re-render/hook trigger if needed, 
+      // though router.push should work. Let's try router.push first.
+      router.push(`/packages/${packageSlug}?intent=book`);
+    }
+    // If status is 'loading', do nothing (button will be disabled)
+  };
 
   return (
     <div className="sticky top-24">
@@ -151,16 +188,23 @@ export default function PriceCalculator({
               <p className="text-xs text-gray-500">{price.pricing_note}</p>
             </div>
 
-            {/* Book Now Button */}
+            {/* Add to Package Button */}
             <button
               className={cn(
                 sacredStyles.button.primary,
                 "w-full flex items-center justify-center gap-2"
               )}
-              onClick={() => setShowBookingModal(true)}
+              onClick={handleAddToPackage}
+              disabled={status === 'loading'}
             >
-              <ShoppingCart className="w-5 h-5" />
-              Book Now
+              {status === 'loading' ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <ShoppingCart className="w-5 h-5" />
+                  {status === 'unauthenticated' ? 'Sign In to Book' : 'Add to Package'}
+                </>
+              )}
             </button>
 
             {/* Additional Info */}
@@ -173,25 +217,7 @@ export default function PriceCalculator({
         )}
       </div>
 
-      {/* Booking Modal */}
-      {showBookingModal && price && (
-        <BookingModal
-          isOpen={showBookingModal}
-          onClose={() => setShowBookingModal(false)}
-          packageId={packageData.id}
-          packageName={packageData.name}
-          selections={{
-            experiences: selections.experiences,
-            hotel: selections.hotel!,
-            transport: selections.transport!,
-          }}
-          totalPrice={price.total_price}
-          onBookingComplete={(booking) => {
-            console.log('Booking complete:', booking);
-            router.push(`/bookings/${booking.booking_reference}`);
-          }}
-        />
-      )}
+      {/* Traveler Details Modal Removed */}
     </div>
   );
 }

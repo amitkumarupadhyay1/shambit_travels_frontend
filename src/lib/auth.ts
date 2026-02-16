@@ -28,11 +28,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               phone: credentials.phone,
               otp: credentials.otp,
             })
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const data = res.data as any
-            if (data) {
+            const data = res.data as { user: { id: string; email?: string; name?: string }; access: string; refresh: string }
+            if (data && data.user) {
               return {
-                ...data.user,
+                id: data.user.id,
+                email: data.user.email,
+                name: data.user.name,
                 accessToken: data.access,
                 refreshToken: data.refresh
               }
@@ -44,11 +45,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               email: credentials.email,
               password: credentials.password,
             })
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const data = res.data as any
-            if (data) {
+            const data = res.data as { user: { id: string; email?: string; name?: string }; access: string; refresh: string }
+            if (data && data.user) {
               return {
-                ...data.user,
+                id: data.user.id,
+                email: data.user.email,
+                name: data.user.name,
                 accessToken: data.access,
                 refreshToken: data.refresh
               }
@@ -57,12 +59,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null
         } catch (err: unknown) {
           console.error("Auth Error:", err)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const error = err as any
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          if ((axios as any).isAxiosError(error) && error.response) {
-            console.error("Backend Error Response:", error.response.data)
-            console.error("Backend Error Status:", error.response.status)
+          if (err && typeof err === 'object' && 'isAxiosError' in err && err.isAxiosError) {
+            const axiosErr = err as { response?: { data: unknown; status: number } }
+            if (axiosErr.response) {
+              console.error("Backend Error Response:", axiosErr.response.data)
+              console.error("Backend Error Status:", axiosErr.response.status)
+            }
           }
           return null
         }
@@ -72,12 +74,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, user, account }) {
       if (user) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        token.accessToken = (user as any).accessToken
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        token.refreshToken = (user as any).refreshToken
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        token.id = (user as any).id
+        token.accessToken = user.accessToken
+        token.refreshToken = user.refreshToken
+        token.id = user.id
 
         // Sync Social Login
         if (account?.provider === "google" || account?.provider === "facebook") {
@@ -86,8 +85,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             const fullName = user.name || ""
             const [firstName, ...restName] = fullName.split(" ")
             const lastName = restName.join(" ")
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const providerToken = account.provider === "google" ? (account as any).id_token : (account as any).access_token
+            const providerToken = account.provider === "google" ? (account as Record<string, unknown>).id_token as string : (account as Record<string, unknown>).access_token as string
 
             if (!providerToken) {
               console.error(`Missing ${account.provider} provider token`)
@@ -102,8 +100,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               uid: account.providerAccountId,
               token: providerToken,
             })
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const data = res.data as any
+            const data = res.data as { access: string; refresh: string; user_id: string }
             token.accessToken = data.access
             token.refreshToken = data.refresh
             token.id = data.user_id
@@ -118,10 +115,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     async session({ session, token }) {
       if (token) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (session as any).accessToken = token.accessToken;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (session as any).user.id = token.id as string;
+        session.accessToken = token.accessToken as string | undefined;
+        // Also expose refresh token so client can persist it to localStorage
+        session.refreshToken = token.refreshToken as string | undefined;
+        session.user.id = token.id as string;
       }
       return session
     },

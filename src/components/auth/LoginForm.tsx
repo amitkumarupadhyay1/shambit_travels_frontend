@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import axios from "axios"
 import { Loader2, Phone, Mail, Lock, AlertCircle } from "lucide-react"
 
@@ -27,6 +27,10 @@ export default function LoginForm() {
     const [otpSent, setOtpSent] = useState(false)
     const [error, setError] = useState("")
     const router = useRouter()
+    const searchParams = useSearchParams()
+    
+    // Get returnUrl from query params
+    const returnUrl = searchParams.get('returnUrl') || '/dashboard'
 
     const emailForm = useForm<z.infer<typeof emailSchema>>({
         resolver: zodResolver(emailSchema),
@@ -49,7 +53,13 @@ export default function LoginForm() {
             if (result?.error) {
                 setError("Invalid email or password")
             } else {
-                router.push("/dashboard")
+                // Check for pending booking and restore state
+                const pendingBooking = sessionStorage.getItem('pendingBooking')
+                if (pendingBooking) {
+                    console.log('Restoring pending booking after login')
+                }
+                
+                router.push(returnUrl)
                 router.refresh()
             }
         } catch {
@@ -103,7 +113,13 @@ export default function LoginForm() {
             if (result?.error) {
                 setError("Invalid OTP")
             } else {
-                router.push("/dashboard")
+                // Check for pending booking and restore state
+                const pendingBooking = sessionStorage.getItem('pendingBooking')
+                if (pendingBooking) {
+                    console.log('Restoring pending booking after login')
+                }
+                
+                router.push(returnUrl)
                 router.refresh()
             }
         } catch {
@@ -251,7 +267,7 @@ export default function LoginForm() {
 
             <button
                 type="button"
-                onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+                onClick={() => signIn("google", { callbackUrl: returnUrl })}
                 className="w-full py-2.5 border border-gray-300 bg-white text-gray-700 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-all flex justify-center items-center"
             >
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -278,7 +294,7 @@ export default function LoginForm() {
             {showFacebookAuth && (
                 <button
                     type="button"
-                    onClick={() => signIn("facebook", { callbackUrl: "/dashboard" })}
+                    onClick={() => signIn("facebook", { callbackUrl: returnUrl })}
                     className="w-full py-2.5 border border-gray-300 bg-white text-gray-700 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-all flex justify-center items-center"
                 >
                     <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">

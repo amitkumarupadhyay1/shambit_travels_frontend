@@ -279,8 +279,33 @@ class ApiService {
             await this.sleep(delay);
           }
 
-          // Get auth token if available - use token manager for auto-refresh
-          const token = await tokenManager.getValidAccessToken();
+          // Get auth token if available - prioritise session token if exists
+          let token = null;
+
+          try {
+            if (typeof window === 'undefined') {
+              // Server-side
+              const { auth } = await import('./auth');
+              const session = await auth();
+              const sessionData = session as unknown as Record<string, unknown>;
+              const userData = sessionData?.user as Record<string, unknown> | undefined;
+              token = (userData?.accessToken as string) || (sessionData?.accessToken as string);
+            } else {
+              // Client-side
+              const { getSession } = await import('next-auth/react');
+              const session = await getSession();
+              const sessionData = session as unknown as Record<string, unknown>;
+              const userData = sessionData?.user as Record<string, unknown> | undefined;
+              token = (userData?.accessToken as string) || (sessionData?.accessToken as string);
+            }
+          } catch (error) {
+            console.warn('Failed to fetch session token:', error);
+          }
+
+          // Fallback to token manager if session token not found
+          if (!token) {
+            token = await tokenManager.getValidAccessToken();
+          }
 
           const headers: Record<string, string> = {
             'Content-Type': 'application/json',
@@ -312,7 +337,81 @@ class ApiService {
             const errorData = await response.json().catch(() => ({ error: 'Unknown error' })) as ApiError;
             console.error(`❌ API Error Response for ${endpoint}:`, errorData);
 
-            // Check if we should retry
+            if (response.status === 401 && !(options as RequestInit & { _isRetry?: boolean })?._isRetry) {
+              console.log(`🔄 401 Unauthorized for ${endpoint}. Attempting to refresh token...`);
+
+              try {
+                // Try to get refresh token from session first
+                let refreshToken: string | null = null;
+
+                try {
+                  if (typeof window === 'undefined') {
+                    // Server-side
+                    const { auth } = await import('./auth');
+                    const session = await auth();
+                    const sessionData = session as unknown as Record<string, unknown>;
+                    const userData = sessionData?.user as Record<string, unknown> | undefined;
+                    refreshToken = (sessionData?.refreshToken as string) || (userData?.refreshToken as string);
+                  } else {
+                    // Client-side
+                    const { getSession } = await import('next-auth/react');
+                    const session = await getSession();
+                    const sessionData = session as unknown as Record<string, unknown>;
+                    const userData = sessionData?.user as Record<string, unknown> | undefined;
+                    refreshToken = (sessionData?.refreshToken as string) || (userData?.refreshToken as string);
+                  }
+                } catch (sessionError) {
+                  console.warn('Failed to get session for refresh:', sessionError);
+                }
+
+                // Fallback to token manager if not in session
+                if (!refreshToken) {
+                  refreshToken = tokenManager.getRefreshToken();
+                }
+
+                if (refreshToken) {
+                  // Call refresh endpoint directly
+                  const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refresh: refreshToken }),
+                  });
+
+                  if (refreshResponse.ok) {
+                    const data = await refreshResponse.json();
+                    const newAccessToken = data.access;
+
+                    if (newAccessToken) {
+                      console.log(`✅ Token refreshed successfully for ${endpoint}. Retrying...`);
+
+                      // Update token manager on client
+                      if (typeof window !== 'undefined') {
+                        tokenManager.setTokens(newAccessToken, refreshToken); // Usually refresh token rotates too, but simple retry mostly needs access
+                      }
+
+                      // Recursively call fetchApi with retry flag
+                      return await this.fetchApi<T>(endpoint, {
+                        ...options,
+                        skipCache: true, // Don't use cache for retries
+                        headers: {
+                          ...options?.headers,
+                          'Authorization': `Bearer ${newAccessToken}`
+                        },
+                        _isRetry: true
+                      } as RequestInit & { skipCache?: boolean; _isRetry?: boolean });
+                    }
+                  } else {
+                    console.error(`❌ Token refresh request failed: ${refreshResponse.status}`);
+                  }
+                } else {
+                  console.log(`ABORT: No refresh token found for ${endpoint}`);
+                }
+              } catch (refreshError) {
+                console.error(`❌ Token refresh failed for ${endpoint}:`, refreshError);
+              }
+            }
+
+            // Check if we should retry for other error types (500, 429, etc)
             if (this.isRetryableError(response.status) && attempt < this.MAX_RETRIES - 1) {
               lastError = new ApiException(
                 this.getUserFriendlyErrorMessage(response.status, errorData),
@@ -510,11 +609,39 @@ class ApiService {
   }
 
   // Bookings
-  async createBooking(data: BookingRequest): Promise<BookingResponse> {
+  async createBooking(data: BookingRequest, options?: { headers?: Record<string, string> }): Promise<BookingResponse> {
     console.log('Creating booking with data:', data);
     return this.fetchApi<BookingResponse>('/bookings/', {
       method: 'POST',
       body: JSON.stringify(data),
+      skipCache: true,
+      headers: options?.headers,
+    });
+  }
+
+  async getBooking(id: number): Promise<BookingDetail> {
+    return this.fetchApi<BookingDetail>(`/bookings/${id}/`, {
+      skipCache: true,
+    });
+  }
+
+  async getBookings(): Promise<BookingDetail[]> {
+    const response = await this.fetchApi<PaginatedResponse<BookingDetail>>('/bookings/', {
+      skipCache: true,
+    });
+    return response.results;
+  }
+
+  async initiatePayment(bookingId: number): Promise<PaymentInitiation> {
+    return this.fetchApi<PaymentInitiation>(`/bookings/${bookingId}/initiate_payment/`, {
+      method: 'POST',
+      skipCache: true,
+    });
+  }
+
+  async cancelBooking(bookingId: number): Promise<{ message: string }> {
+    return this.fetchApi<{ message: string }>(`/bookings/${bookingId}/cancel/`, {
+      method: 'POST',
       skipCache: true,
     });
   }
@@ -618,6 +745,34 @@ export interface PriceRange {
     currency: string;
   };
   note: string;
+}
+
+// Booking Detail Response
+export interface BookingDetail {
+  id: number;
+  user_email: string;
+  package: Package;
+  selected_experiences: Experience[];
+  selected_hotel_tier: HotelTier;
+  selected_transport: TransportOption;
+  booking_date: string;
+  num_travelers: number;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  special_requests: string;
+  total_price: string;
+  status: 'DRAFT' | 'PENDING_PAYMENT' | 'CONFIRMED' | 'CANCELLED' | 'EXPIRED';
+  created_at: string;
+  updated_at: string;
+}
+
+// Payment Initiation Response
+export interface PaymentInitiation {
+  razorpay_order_id: string;
+  amount: number; // in paise
+  currency: string;
+  booking_id: number;
 }
 
 export const apiService = new ApiService();
