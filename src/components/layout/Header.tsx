@@ -18,17 +18,10 @@ const Header = () => {
     { name: 'Destinations', href: '/destinations' },
     { name: 'Packages', href: '/packages' },
     { name: 'Experiences', href: '/experiences' },
+    { name: 'Booking', href: '/booking' },
     { name: 'Articles', href: '/articles' },
     { name: 'About', href: '/about' },
     { name: 'Contact', href: '/contact' },
-  ];
-
-  const bookingServices = [
-    { name: 'Hotels', href: '/hotels-booking' },
-    { name: 'Railway Tickets', href: '/railway-tickets' },
-    { name: 'Air Tickets', href: '/air-tickets' },
-    { name: 'Bus Tickets', href: '/bus-tickets' },
-    { name: 'Book Taxi', href: '/book-taxi' },
   ];
 
   // Keyboard shortcut: Cmd/Ctrl + K to open search
@@ -201,25 +194,6 @@ const Header = () => {
                     {item.name}
                   </Link>
                 ))}
-                
-                {/* Booking Services Section */}
-                <div className="pt-3 border-t border-gray-100">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2 mb-2">
-                    Booking Services
-                  </p>
-                  {bookingServices.map((service) => (
-                    <Link
-                      key={service.name}
-                      href={service.href}
-                      className="text-gray-700 hover:text-orange-600 transition-colors py-2 px-2 block text-sm touch-manipulation active:bg-orange-50 rounded-lg"
-                      onClick={() => {
-                        setTimeout(() => setIsMenuOpen(false), 100);
-                      }}
-                    >
-                      {service.name}
-                    </Link>
-                  ))}
-                </div>
 
                 <Link
                   href="/login"
