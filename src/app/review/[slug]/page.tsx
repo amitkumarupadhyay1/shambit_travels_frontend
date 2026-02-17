@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 interface TravellerInfo {
   name: string;
   age: string;
+  gender: string;
 }
 
 export default function ReviewPage() {
@@ -28,11 +29,13 @@ export default function ReviewPage() {
 
   // Form state
   const [numTravelers, setNumTravelers] = useState(1);
-  const [travellers, setTravellers] = useState<TravellerInfo[]>([{ name: '', age: '' }]);
+  const [travellers, setTravellers] = useState<TravellerInfo[]>([{ name: '', age: '', gender: '' }]);
   const [bookingDate, setBookingDate] = useState('');
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
+  const [specialRequests, setSpecialRequests] = useState('');
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   // Calculate minimum date once
   const minBookingDate = useMemo(() => {
@@ -107,7 +110,7 @@ export default function ReviewPage() {
     setTravellers(prev => {
       const newTravellers = [...prev];
       while (newTravellers.length < newNum) {
-        newTravellers.push({ name: '', age: '' });
+        newTravellers.push({ name: '', age: '', gender: '' });
       }
       while (newTravellers.length > newNum) {
         newTravellers.pop();
@@ -116,7 +119,7 @@ export default function ReviewPage() {
     });
   };
 
-  const handleTravellerChange = (index: number, field: 'name' | 'age', value: string) => {
+  const handleTravellerChange = (index: number, field: 'name' | 'age' | 'gender', value: string) => {
     setTravellers(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
@@ -139,7 +142,15 @@ export default function ReviewPage() {
       }
 
       if (travellers.some(t => !t.name || !t.age)) {
-        const errorMsg = 'Please fill in all traveller details';
+        const errorMsg = 'Please fill in all traveller details (name and age are required)';
+        setError(errorMsg);
+        toast.error(errorMsg);
+        setSubmitting(false);
+        return;
+      }
+
+      if (!acceptTerms) {
+        const errorMsg = 'Please accept the terms and conditions to proceed';
         setError(errorMsg);
         toast.error(errorMsg);
         setSubmitting(false);
@@ -158,7 +169,7 @@ export default function ReviewPage() {
       // Show loading toast
       const toastId = toast.loading('Creating your booking...');
 
-      // Create booking
+      // Create booking with traveler details
       const bookingData = {
         package_id: selections.packageId,
         experience_ids: selections.experienceIds,
@@ -166,10 +177,15 @@ export default function ReviewPage() {
         transport_option_id: selections.transportOptionId,
         booking_date: bookingDate,
         num_travelers: numTravelers,
+        traveler_details: travellers.map(t => ({
+          name: t.name,
+          age: parseInt(t.age),
+          gender: t.gender || ''
+        })),
         customer_name: contactName,
         customer_email: contactEmail,
         customer_phone: contactPhone,
-        special_requests: '',
+        special_requests: specialRequests,
       };
 
       console.log('Creating booking:', bookingData);
@@ -188,8 +204,8 @@ export default function ReviewPage() {
       // Show success toast
       toast.success('Booking created successfully!', { id: toastId });
 
-      // Redirect to bookings dashboard
-      router.push(`/dashboard/bookings`);
+      // Redirect to checkout page for payment
+      router.push(`/checkout/${response.id}`);
     } catch (err) {
       console.error('Failed to create booking:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to create booking. Please try again.';
@@ -260,36 +276,67 @@ export default function ReviewPage() {
           {/* Traveller Details */}
           <div className={sacredStyles.card}>
             <h2 className={cn(sacredStyles.heading.h4, 'mb-4')}>Traveller Details</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              <strong>Note:</strong> Children under 5 years travel free. Full charge applies for ages 5 and above.
+            </p>
             <div className="space-y-4">
-              {travellers.map((traveller, index) => (
-                <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Traveller {index + 1}</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm text-gray-600 mb-1">Full Name</label>
-                      <input
-                        type="text"
-                        value={traveller.name}
-                        onChange={(e) => handleTravellerChange(index, 'name', e.target.value)}
-                        placeholder="Enter full name"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
+              {travellers.map((traveller, index) => {
+                const age = parseInt(traveller.age);
+                const isFree = age > 0 && age < 5;
+                
+                return (
+                  <div key={index} className={cn(
+                    "p-4 rounded-lg border-2",
+                    isFree ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"
+                  )}>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-medium text-gray-700">Traveller {index + 1}</h3>
+                      {isFree && (
+                        <span className="text-xs font-medium text-green-700 bg-green-100 px-2 py-1 rounded">
+                          Free (Under 5)
+                        </span>
+                      )}
                     </div>
-                    <div>
-                      <label className="block text-sm text-gray-600 mb-1">Age</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="120"
-                        value={traveller.age}
-                        onChange={(e) => handleTravellerChange(index, 'age', e.target.value)}
-                        placeholder="Age"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="block text-sm text-gray-600 mb-1">Full Name *</label>
+                        <input
+                          type="text"
+                          value={traveller.name}
+                          onChange={(e) => handleTravellerChange(index, 'name', e.target.value)}
+                          placeholder="As per ID proof"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-1">Age *</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="120"
+                          value={traveller.age}
+                          onChange={(e) => handleTravellerChange(index, 'age', e.target.value)}
+                          placeholder="Age"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div className="md:col-span-3">
+                        <label className="block text-sm text-gray-600 mb-1">Gender</label>
+                        <select
+                          value={traveller.gender}
+                          onChange={(e) => handleTravellerChange(index, 'gender', e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        >
+                          <option value="">Select gender</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -300,7 +347,7 @@ export default function ReviewPage() {
               <div>
                 <label className="block text-sm text-gray-600 mb-1 flex items-center gap-2">
                   <User className="w-4 h-4" />
-                  Contact Name
+                  Contact Name *
                 </label>
                 <input
                   type="text"
@@ -313,7 +360,7 @@ export default function ReviewPage() {
               <div>
                 <label className="block text-sm text-gray-600 mb-1 flex items-center gap-2">
                   <Mail className="w-4 h-4" />
-                  Email
+                  Email *
                 </label>
                 <input
                   type="email"
@@ -326,7 +373,7 @@ export default function ReviewPage() {
               <div>
                 <label className="block text-sm text-gray-600 mb-1 flex items-center gap-2">
                   <Phone className="w-4 h-4" />
-                  Phone Number
+                  Phone Number *
                 </label>
                 <input
                   type="tel"
@@ -336,6 +383,41 @@ export default function ReviewPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Special Requests */}
+          <div className={sacredStyles.card}>
+            <h2 className={cn(sacredStyles.heading.h4, 'mb-4')}>Special Requests (Optional)</h2>
+            <textarea
+              value={specialRequests}
+              onChange={(e) => setSpecialRequests(e.target.value)}
+              placeholder="Any dietary requirements, accessibility needs, or special occasions?"
+              rows={4}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* Terms and Conditions */}
+          <div className={sacredStyles.card}>
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="acceptTerms"
+                checked={acceptTerms}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
+                className="mt-1 w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+              />
+              <label htmlFor="acceptTerms" className="text-sm text-gray-700">
+                I accept the{' '}
+                <a href="/terms" target="_blank" className="text-orange-600 hover:underline">
+                  terms and conditions
+                </a>
+                {' '}and{' '}
+                <a href="/cancellation-policy" target="_blank" className="text-orange-600 hover:underline">
+                  cancellation policy
+                </a>
+              </label>
             </div>
           </div>
         </div>
@@ -389,13 +471,37 @@ export default function ReviewPage() {
                     </div>
                   </div>
 
+                  <div className="border-t pt-3">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-600">Price per person</span>
+                      <span className="font-medium">{formatCurrency(parseFloat(priceData.total_price))}</span>
+                    </div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-600">Total travelers</span>
+                      <span className="font-medium">× {numTravelers}</span>
+                    </div>
+                    {travellers.length > 0 && travellers.every(t => t.age) && (
+                      <>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-gray-600">Note</span>
+                          <span className="text-xs text-gray-500">
+                            Final price calculated on backend based on traveler ages
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
                   <div className="border-t-2 pt-3">
                     <div className="flex justify-between items-center">
-                      <span className="font-semibold">Total</span>
+                      <span className="font-semibold">Estimated Total</span>
                       <span className="text-2xl font-bold text-orange-600">
-                        {formatCurrency(parseFloat(priceData.total_price))}
+                        {formatCurrency(parseFloat(priceData.total_price) * numTravelers)}
                       </span>
                     </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      All taxes included. Final price calculated based on traveler ages.
+                    </p>
                   </div>
                 </div>
               </div>

@@ -28,12 +28,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               phone: credentials.phone,
               otp: credentials.otp,
             })
-            const data = res.data as { user: { id: string; email?: string; name?: string }; access: string; refresh: string }
+            const data = res.data as { 
+              user: { 
+                id: string; 
+                email?: string;
+                username?: string;
+                first_name?: string;
+                last_name?: string;
+                phone?: string;
+              }; 
+              access: string; 
+              refresh: string 
+            }
             if (data && data.user) {
               return {
                 id: data.user.id,
                 email: data.user.email,
-                name: data.user.name,
+                name: data.user.first_name && data.user.last_name 
+                  ? `${data.user.first_name} ${data.user.last_name}`.trim()
+                  : data.user.first_name || data.user.email,
+                username: data.user.username,
+                firstName: data.user.first_name,
+                lastName: data.user.last_name,
+                phone: data.user.phone,
                 accessToken: data.access,
                 refreshToken: data.refresh
               }
@@ -45,12 +62,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               email: credentials.email,
               password: credentials.password,
             })
-            const data = res.data as { user: { id: string; email?: string; name?: string }; access: string; refresh: string }
+            const data = res.data as { 
+              user: { 
+                id: string; 
+                email?: string;
+                username?: string;
+                first_name?: string;
+                last_name?: string;
+                phone?: string;
+              }; 
+              access: string; 
+              refresh: string 
+            }
             if (data && data.user) {
               return {
                 id: data.user.id,
                 email: data.user.email,
-                name: data.user.name,
+                name: data.user.first_name && data.user.last_name 
+                  ? `${data.user.first_name} ${data.user.last_name}`.trim()
+                  : data.user.first_name || data.user.email,
+                username: data.user.username,
+                firstName: data.user.first_name,
+                lastName: data.user.last_name,
+                phone: data.user.phone,
                 accessToken: data.access,
                 refreshToken: data.refresh
               }
@@ -77,6 +111,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.accessToken = user.accessToken
         token.refreshToken = user.refreshToken
         token.id = user.id
+        token.username = user.username
+        token.firstName = user.firstName
+        token.lastName = user.lastName
+        token.phone = user.phone
 
         // Sync Social Login
         if (account?.provider === "google" || account?.provider === "facebook") {
@@ -100,12 +138,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               uid: account.providerAccountId,
               token: providerToken,
             })
-            const data = res.data as { access: string; refresh: string; user_id: string }
+            const data = res.data as { 
+              access: string; 
+              refresh: string; 
+              user_id: string;
+              username?: string;
+              first_name?: string;
+              last_name?: string;
+            }
             token.accessToken = data.access
             token.refreshToken = data.refresh
             token.id = data.user_id
-            // Update user info from backend
-            Object.assign(token, data)
+            token.username = data.username
+            token.firstName = data.first_name || firstName
+            token.lastName = data.last_name || lastName
           } catch (e) {
             console.error("Sync failed", e)
           }
@@ -116,9 +162,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (token) {
         session.accessToken = token.accessToken as string | undefined;
-        // Also expose refresh token so client can persist it to localStorage
         session.refreshToken = token.refreshToken as string | undefined;
         session.user.id = token.id as string;
+        session.user.username = token.username as string | undefined;
+        session.user.firstName = token.firstName as string | undefined;
+        session.user.lastName = token.lastName as string | undefined;
+        session.user.phone = token.phone as string | undefined;
       }
       return session
     },

@@ -759,9 +759,55 @@ export interface PriceRange {
   note: string;
 }
 
+// Price Breakdown from Backend (NO frontend calculations)
+export interface PriceBreakdown {
+  // Component prices (backend calculated)
+  base_experience_total: string;
+  transport_cost: string;
+  subtotal_before_hotel: string;
+  hotel_multiplier: string;
+  subtotal_after_hotel: string;
+  total_markup: string;
+  total_discount: string;
+  applied_rules: Array<{
+    name: string;
+    type: string;
+    value: string;
+    is_percentage: boolean;
+    amount_applied: string;
+  }>;
+  
+  // Per-person and total (backend calculated)
+  per_person_price: string;
+  num_travelers: number;
+  chargeable_travelers?: number; // Age-based pricing
+  total_amount: string;
+  chargeable_age_threshold?: number;
+  
+  // Individual items
+  experiences: Array<{
+    id: number;
+    name: string;
+    price: string;
+  }>;
+  hotel_tier: {
+    name: string;
+    multiplier: string;
+  };
+  transport: {
+    name: string;
+    price: string;
+  };
+  
+  // Currency
+  currency: string;
+  currency_symbol: string;
+}
+
 // Booking Detail Response
 export interface BookingDetail {
   id: number;
+  booking_reference?: string;
   user_email: string;
   package: Package;
   selected_experiences: Experience[];
@@ -773,8 +819,10 @@ export interface BookingDetail {
   customer_email: string;
   customer_phone: string;
   special_requests: string;
-  total_price: string;
+  total_price: string; // Per-person price from backend
+  price_breakdown: PriceBreakdown; // Complete breakdown from backend
   status: 'DRAFT' | 'PENDING_PAYMENT' | 'CONFIRMED' | 'CANCELLED' | 'EXPIRED';
+  expires_at: string | null;
   created_at: string;
   updated_at: string;
 }

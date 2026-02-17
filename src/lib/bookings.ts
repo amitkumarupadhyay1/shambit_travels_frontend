@@ -1,5 +1,11 @@
 // Booking types and interfaces
 
+export interface TravelerDetail {
+  name: string;
+  age: number;
+  gender?: string;
+}
+
 export interface BookingRequest {
   package_id: number;
   experience_ids: number[];
@@ -7,6 +13,7 @@ export interface BookingRequest {
   transport_option_id: number;
   booking_date: string;
   num_travelers: number;
+  traveler_details?: TravelerDetail[];
   customer_name: string;
   customer_email: string;
   customer_phone: string;

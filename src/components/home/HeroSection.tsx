@@ -97,6 +97,7 @@ const HeroSection = ({
                     placeholder="Search destinations (e.g. Ayodhya)"
                     className="w-full bg-transparent border-none outline-none focus:outline-none ring-0 focus:ring-0 py-3 sm:py-4 px-3 sm:px-4 text-gray-800 placeholder:text-gray-400 text-sm sm:text-base font-medium leading-relaxed tracking-wide"
                     readOnly
+                    suppressHydrationWarning
                   />
                   <div className="pr-4 sm:pr-6">
                     <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500 animate-spin" />
@@ -144,6 +145,7 @@ const HeroSection = ({
                   aria-controls="city-dropdown"
                   aria-expanded={isDropdownOpen}
                   role="combobox"
+                  suppressHydrationWarning
                 />
 
                 <div className="pr-4 sm:pr-6 flex items-center space-x-2">

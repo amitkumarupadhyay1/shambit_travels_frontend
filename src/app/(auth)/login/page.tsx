@@ -1,14 +1,20 @@
 import { Suspense } from "react"
 import LoginForm from "@/components/auth/LoginForm"
+import Header from "@/components/layout/Header"
+import Footer from "@/components/layout/Footer"
 
 export default function LoginPage() {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="w-full max-w-md">
-                <Suspense fallback={<div>Loading...</div>}>
-                    <LoginForm />
-                </Suspense>
+        <main className="min-h-screen flex flex-col bg-white">
+            <Header />
+            <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-white py-12 px-4 sm:px-6 lg:px-8 mt-20">
+                <div className="w-full max-w-md">
+                    <Suspense fallback={<div>Loading...</div>}>
+                        <LoginForm />
+                    </Suspense>
+                </div>
             </div>
-        </div>
+            <Footer />
+        </main>
     )
 }

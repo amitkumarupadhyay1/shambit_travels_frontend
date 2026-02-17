@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { BookingDetail, apiService } from '@/lib/api';
 import { cn, sacredStyles, formatCurrency } from '@/lib/utils';
 import {
@@ -15,8 +16,23 @@ import {
   AlertCircle,
   CheckCircle,
   Edit,
+  Shield,
 } from 'lucide-react';
-import PaymentModal from './PaymentModal';
+import ExpiryTimer from './ExpiryTimer';
+import toast from 'react-hot-toast';
+
+// Lazy load PaymentModal for better performance
+const PaymentModal = dynamic(() => import('./PaymentModal'), {
+  loading: () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="bg-white rounded-lg p-6">
+        <Loader2 className="w-8 h-8 text-orange-600 animate-spin mx-auto" />
+        <p className="mt-4 text-gray-700">Loading payment gateway...</p>
+      </div>
+    </div>
+  ),
+  ssr: false, // Payment modal should only render on client
+});
 
 interface CheckoutClientProps {
   booking: BookingDetail;
@@ -28,13 +44,38 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const handleExpire = () => {
+    toast.error('Booking expired. Please start a new booking.');
+    setTimeout(() => {
+      router.push('/packages');
+    }, 3000);
+  };
+
   const handleProceedToPayment = async () => {
     setIsProcessing(true);
     setError(null);
 
     try {
+      // Validate amount before initiating payment
+      const expectedAmountInPaise = Math.round(totalAmount * 100);
+      
       // Initiate payment
       const paymentData = await apiService.initiatePayment(booking.id);
+      
+      // Validate payment amount matches expected
+      if (paymentData.amount !== expectedAmountInPaise) {
+        throw new Error(
+          `Payment amount mismatch detected. ` +
+          `Expected ₹${totalAmount.toFixed(2)}, but payment gateway shows ₹${(paymentData.amount / 100).toFixed(2)}. ` +
+          `This may indicate a pricing error. Please refresh the page and try again, or contact support.`
+        );
+      }
+      
+      console.log('Payment amount validated:', {
+        expected: expectedAmountInPaise,
+        received: paymentData.amount,
+        match: true
+      });
       
       // Open payment modal
       setShowPaymentModal(true);
@@ -51,8 +92,62 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
 
   const handlePaymentSuccess = (paymentId: string) => {
     console.log('Payment successful:', paymentId);
-    // Navigate to confirmation page
-    router.push(`/bookings/${booking.id}`);
+    setShowPaymentModal(false);
+    
+    // Start polling booking status
+    toast.loading('Verifying payment...', { id: 'payment-verify' });
+    pollBookingStatus();
+  };
+
+  const pollBookingStatus = async () => {
+    const maxAttempts = 30; // 30 attempts * 2 seconds = 60 seconds max
+    
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        // Wait 2 seconds before each poll
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Fetch latest booking status
+        const updatedBooking = await apiService.getBooking(booking.id);
+        
+        if (updatedBooking.status === 'CONFIRMED') {
+          toast.success('Payment confirmed!', { id: 'payment-verify' });
+          // Navigate to confirmation page
+          router.push(`/bookings/${updatedBooking.booking_reference || updatedBooking.id}`);
+          return;
+        }
+        
+        if (updatedBooking.status === 'CANCELLED') {
+          toast.error('Payment was cancelled', { id: 'payment-verify' });
+          setError('Payment was cancelled. Please try again.');
+          return;
+        }
+        
+        if (updatedBooking.status === 'EXPIRED') {
+          toast.error('Booking expired', { id: 'payment-verify' });
+          setError('Booking has expired. Please create a new booking.');
+          return;
+        }
+        
+        // Still pending, continue polling
+        console.log(`Polling attempt ${attempt + 1}/${maxAttempts}: Status is ${updatedBooking.status}`);
+        
+      } catch (err) {
+        console.error('Error polling booking status:', err);
+        // Continue polling even on error
+      }
+    }
+    
+    // Timeout reached
+    toast.dismiss('payment-verify');
+    toast.error(
+      'Payment verification is taking longer than expected. Please check your booking status in a few minutes.',
+      { duration: 8000 }
+    );
+    setError(
+      'Payment verification timeout. Your payment may still be processing. ' +
+      'Please check your email or contact support if you don\'t receive confirmation within 10 minutes.'
+    );
   };
 
   const handlePaymentFailure = (error: string) => {
@@ -61,7 +156,12 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
     setShowPaymentModal(false);
   };
 
-  const totalAmount = parseFloat(booking.total_price) * booking.num_travelers;
+  // ⚠️ SECURITY ENFORCEMENT: ALL prices from backend - ZERO frontend calculations ⚠️
+  // Backend provides complete price_breakdown with all calculated values
+  const breakdown = booking.price_breakdown;
+  const totalAmount = parseFloat(breakdown.total_amount);
+  const perPersonPrice = parseFloat(breakdown.per_person_price);
+  const numTravelers = breakdown.num_travelers;
 
   return (
     <div className={cn(sacredStyles.container, "max-w-5xl")}>
@@ -86,6 +186,13 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
         </div>
       )}
 
+      {/* Expiry Timer */}
+      {booking.expires_at && (
+        <div className="mb-6">
+          <ExpiryTimer expiresAt={booking.expires_at} onExpire={handleExpire} />
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Booking Details */}
         <div className="lg:col-span-2 space-y-6">
@@ -98,9 +205,10 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
               <button
                 onClick={() => router.push(`/packages/${booking.package.slug}`)}
                 className="text-sm text-orange-600 hover:text-orange-700 flex items-center gap-1"
+                aria-label="Edit package selections"
               >
-                <Edit className="w-4 h-4" />
-                Edit
+                <Edit className="w-4 h-4" aria-hidden="true" />
+                <span>Edit</span>
               </button>
             </div>
 
@@ -193,7 +301,7 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
               </div>
 
               <div className="md:col-span-2 flex items-start gap-3">
-                <div className="w-5 h-5 flex-shrink-0" /> {/* Spacer */}
+                <div className="w-5 h-5 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-gray-700">Contact Person</p>
                   <p className="text-sm text-gray-900">{booking.customer_name}</p>
@@ -202,7 +310,7 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
 
               {booking.special_requests && (
                 <div className="md:col-span-2 flex items-start gap-3">
-                  <div className="w-5 h-5 flex-shrink-0" /> {/* Spacer */}
+                  <div className="w-5 h-5 flex-shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-gray-700">Special Requests</p>
                     <p className="text-sm text-gray-900">{booking.special_requests}</p>
@@ -228,29 +336,94 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
         <div className="lg:col-span-1">
           <div className="sticky top-24">
             <div className={sacredStyles.card}>
-              <h2 className={cn(sacredStyles.heading.h3, "mb-4")}>
-                Price Summary
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className={cn(sacredStyles.heading.h3, "mb-0")}>
+                  Price Summary
+                </h2>
+                <Shield className="w-5 h-5 text-green-600" aria-label="All prices calculated securely on backend" />
+              </div>
 
               <div className="space-y-3 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Package Price (per person)</span>
-                  <span className="font-medium">{formatCurrency(parseFloat(booking.total_price))}</span>
+                {/* Experiences Breakdown - ALL FROM BACKEND */}
+                <div className="pb-3 border-b border-gray-200">
+                  <p className="text-xs font-medium text-gray-500 uppercase mb-2">Selected Experiences</p>
+                  {breakdown.experiences.map((exp) => (
+                    <div key={exp.id} className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-600">{exp.name}</span>
+                      <span className="font-medium">{formatCurrency(parseFloat(exp.price))}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between text-sm mt-2 pt-2 border-t border-gray-100">
+                    <span className="text-gray-700 font-medium">Experiences Total</span>
+                    <span className="font-semibold">{formatCurrency(parseFloat(breakdown.base_experience_total))}</span>
+                  </div>
                 </div>
 
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Number of Travelers</span>
-                  <span className="font-medium">× {booking.num_travelers}</span>
+                {/* Hotel & Transport - ALL FROM BACKEND */}
+                <div className="pb-3 border-b border-gray-200">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-600">Hotel: {breakdown.hotel_tier.name}</span>
+                    <span className="font-medium text-blue-600">
+                      ×{breakdown.hotel_tier.multiplier}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-600">Transport: {breakdown.transport.name}</span>
+                    <span className="font-medium">{formatCurrency(parseFloat(breakdown.transport.price))}</span>
+                  </div>
+                  <div className="flex justify-between text-sm mt-2 pt-2 border-t border-gray-100">
+                    <span className="text-gray-700 font-medium">After Hotel Multiplier</span>
+                    <span className="font-semibold">{formatCurrency(parseFloat(breakdown.subtotal_after_hotel))}</span>
+                  </div>
                 </div>
 
-                <div className="border-t border-gray-200 pt-3">
-                  <div className="flex justify-between items-center">
+                {/* Applied Rules (Taxes, Discounts) - ALL FROM BACKEND */}
+                {breakdown.applied_rules && breakdown.applied_rules.length > 0 && (
+                  <div className="pb-3 border-b border-gray-200">
+                    <p className="text-xs font-medium text-gray-500 uppercase mb-2">Taxes & Charges</p>
+                    {breakdown.applied_rules.map((rule, index) => (
+                      <div key={index} className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-600">
+                          {rule.name}
+                          {rule.is_percentage && ` (${rule.value}%)`}
+                        </span>
+                        <span className={rule.type === 'MARKUP' ? 'text-orange-600 font-medium' : 'text-green-600 font-medium'}>
+                          {rule.type === 'MARKUP' ? '+' : '-'}
+                          {formatCurrency(parseFloat(rule.amount_applied))}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Per Person & Total - ALL FROM BACKEND */}
+                <div className="pb-3 border-b-2 border-gray-300">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-700 font-medium">Price per person</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(perPersonPrice)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-700 font-medium">Number of travelers</span>
+                    <span className="font-semibold text-gray-900">× {numTravelers}</span>
+                  </div>
+                </div>
+
+                {/* Total Amount - FROM BACKEND */}
+                <div className="pt-3">
+                  <div className="flex justify-between items-center mb-2">
                     <span className="text-lg font-semibold text-gray-900">Total Amount</span>
-                    <span className="text-2xl font-bold text-orange-600">
+                    <span className="text-3xl font-bold text-orange-600">
                       {formatCurrency(totalAmount)}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Inclusive of all taxes</p>
+                  <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 px-2 py-1 rounded">
+                    <CheckCircle className="w-3 h-3" />
+                    <span>All taxes included • No hidden charges</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2 text-center flex items-center justify-center gap-1">
+                    <Shield className="w-3 h-3" />
+                    All prices calculated securely on our servers
+                  </p>
                 </div>
               </div>
 
@@ -260,28 +433,45 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
                 disabled={isProcessing}
                 className={cn(
                   sacredStyles.button.primary,
-                  "w-full flex items-center justify-center gap-2"
+                  "w-full flex items-center justify-center gap-2 text-lg py-4"
                 )}
+                aria-label={`Pay ${formatCurrency(totalAmount)} for booking`}
+                aria-busy={isProcessing}
+                aria-describedby="payment-amount-info"
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Processing...
+                    <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                    <span>Processing...</span>
                   </>
                 ) : (
                   <>
-                    <CreditCard className="w-5 h-5" />
-                    Proceed to Payment
+                    <CreditCard className="w-5 h-5" aria-hidden="true" />
+                    <span>Pay {formatCurrency(totalAmount)}</span>
                   </>
                 )}
               </button>
+              
+              <div id="payment-amount-info" className="sr-only">
+                Total payment amount is {formatCurrency(totalAmount)} for {numTravelers} traveler{numTravelers > 1 ? 's' : ''}. 
+                {breakdown.chargeable_travelers && breakdown.chargeable_travelers !== numTravelers && (
+                  <span>This includes {breakdown.chargeable_travelers} chargeable traveler{breakdown.chargeable_travelers > 1 ? 's' : ''}.</span>
+                )}
+              </div>
 
-              {/* Secu
-rity Badges */}
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  <span>Secure Payment</span>
+              {/* Security Badges */}
+              <div className="mt-6 pt-6 border-t border-gray-200 space-y-3">
+                <div className="flex items-center justify-center gap-2 text-sm text-green-700 bg-green-50 px-3 py-2 rounded-lg">
+                  <CheckCircle className="w-5 h-5" />
+                  <span className="font-medium">100% Secure Payment</span>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-gray-500 mb-2">Powered by Razorpay</p>
+                  <div className="flex items-center justify-center gap-3 text-xs text-gray-400">
+                    <span>🔒 256-bit SSL</span>
+                    <span>•</span>
+                    <span>PCI DSS Compliant</span>
+                  </div>
                 </div>
               </div>
             </div>

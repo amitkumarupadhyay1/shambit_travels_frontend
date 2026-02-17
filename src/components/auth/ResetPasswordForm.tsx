@@ -108,6 +108,12 @@ function ResetPasswordFormContent() {
     return (
         <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg border border-gray-100">
             <div className="text-center">
+                <div className="flex justify-center mb-4">
+                    <div className="text-3xl font-playfair font-bold tracking-tight">
+                        <span className="midnight-blue-gradient-text">Sham</span>
+                        <span className="sacred-gradient-text">Bit</span>
+                    </div>
+                </div>
                 <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-600 to-amber-600">
                     Reset Password
                 </h2>
@@ -259,6 +265,12 @@ export default function ResetPasswordForm() {
         <Suspense fallback={
             <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg border border-gray-100">
                 <div className="text-center">
+                    <div className="flex justify-center mb-4">
+                        <div className="text-3xl font-playfair font-bold tracking-tight">
+                            <span className="midnight-blue-gradient-text">Sham</span>
+                            <span className="sacred-gradient-text">Bit</span>
+                        </div>
+                    </div>
                     <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-600 to-amber-600">
                         Reset Password
                     </h2>

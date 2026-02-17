@@ -93,7 +93,7 @@ const HowItWorksSection = () => {
           viewport={{ once: true }}
           className="text-center mt-16"
         >
-          <button className={cn(sacredStyles.button.secondary, "text-lg")}>
+          <button className={cn(sacredStyles.button.secondary, "text-lg")} suppressHydrationWarning>
             Start Your Journey Today
           </button>
         </motion.div>
