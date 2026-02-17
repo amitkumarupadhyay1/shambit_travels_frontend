@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { Suspense } from 'react';
 import ArticlesListingClient from '@/components/articles/ArticlesListingClient';
 import { SkeletonGrid } from '@/components/common/SkeletonCard';
-import ErrorBoundary from '@/components/common/ErrorBoundary';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 export const metadata: Metadata = {
   title: 'Articles & Travel Guides | ShamBit Blog',

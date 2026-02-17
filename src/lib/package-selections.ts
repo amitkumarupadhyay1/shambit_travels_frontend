@@ -56,3 +56,14 @@ export function clearSelections(): void {
 export function hasSelections(): boolean {
     return !!getSelections();
 }
+
+export function validateSelections(selections: PackageSelections): boolean {
+    return !!(
+        selections.packageId &&
+        selections.slug &&
+        selections.experienceIds.length > 0 &&
+        selections.hotelTierId &&
+        selections.transportOptionId &&
+        selections.idempotencyKey
+    );
+}

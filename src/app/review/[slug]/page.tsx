@@ -4,9 +4,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Package, apiService, PriceCalculation } from '@/lib/api';
-import { getSelections, clearSelections } from '@/lib/package-selections';
+import { getSelections, clearSelections, validateSelections } from '@/lib/package-selections';
 import { cn, sacredStyles, formatCurrency } from '@/lib/utils';
 import { Loader2, Calendar, Users, Mail, Phone, User, AlertCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface TravellerInfo {
   name: string;
@@ -58,6 +59,16 @@ export default function ReviewPage() {
         const selections = getSelections();
         if (!selections || selections.slug !== slug) {
           console.error('No valid selections found');
+          toast.error('Session expired. Please start your booking again.');
+          router.replace('/packages');
+          return;
+        }
+
+        // Validate selections
+        if (!validateSelections(selections)) {
+          console.error('Invalid selections found');
+          toast.error('Invalid booking data. Please start again.');
+          clearSelections();
           router.replace('/packages');
           return;
         }
@@ -80,7 +91,9 @@ export default function ReviewPage() {
         setLoading(false);
       } catch (err) {
         console.error('Failed to load review data:', err);
-        setError('Failed to load booking details. Please try again.');
+        const errorMessage = 'Failed to load booking details. Please try again.';
+        setError(errorMessage);
+        toast.error(errorMessage);
         setLoading(false);
       }
     };
@@ -118,23 +131,32 @@ export default function ReviewPage() {
 
       // Validate form
       if (!contactName || !contactEmail || !contactPhone) {
-        setError('Please fill in all contact details');
+        const errorMsg = 'Please fill in all contact details';
+        setError(errorMsg);
+        toast.error(errorMsg);
         setSubmitting(false);
         return;
       }
 
       if (travellers.some(t => !t.name || !t.age)) {
-        setError('Please fill in all traveller details');
+        const errorMsg = 'Please fill in all traveller details';
+        setError(errorMsg);
+        toast.error(errorMsg);
         setSubmitting(false);
         return;
       }
 
       const selections = getSelections();
       if (!selections) {
-        setError('Session expired. Please start again.');
+        const errorMsg = 'Session expired. Please start again.';
+        setError(errorMsg);
+        toast.error(errorMsg);
         setSubmitting(false);
         return;
       }
+
+      // Show loading toast
+      const toastId = toast.loading('Creating your booking...');
 
       // Create booking
       const bookingData = {
@@ -163,12 +185,16 @@ export default function ReviewPage() {
       // Clear selections
       clearSelections();
 
-      // Redirect to payment page (placeholder for now)
-      router.push(`/dashboard/booking/${response.id}`);
+      // Show success toast
+      toast.success('Booking created successfully!', { id: toastId });
+
+      // Redirect to bookings dashboard
+      router.push(`/dashboard/bookings`);
     } catch (err) {
       console.error('Failed to create booking:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to create booking. Please try again.';
       setError(errorMessage);
+      toast.error(errorMessage);
       setSubmitting(false);
     }
   };

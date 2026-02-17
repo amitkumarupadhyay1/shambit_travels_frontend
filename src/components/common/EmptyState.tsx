@@ -1,41 +1,27 @@
-'use client';
-
-import { ReactNode } from 'react';
-import { cn, sacredStyles } from '@/lib/utils';
+import React from 'react';
 
 interface EmptyStateProps {
-  icon: ReactNode;
+  icon: React.ReactNode;
   title: string;
   description: string;
   action?: {
     label: string;
     onClick: () => void;
   };
-  className?: string;
 }
 
-export function EmptyState({ icon, title, description, action, className }: EmptyStateProps) {
+export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
-    <div className={cn('text-center py-16 px-4', className)}>
-      <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-orange-100 to-yellow-100 mb-6 animate-in zoom-in duration-500">
-        <div className="text-orange-600">{icon}</div>
+    <div className="text-center py-12">
+      <div className="mx-auto w-16 h-16 text-gray-300 mb-4">
+        {icon}
       </div>
-      
-      <h3 className={cn(sacredStyles.heading.h4, 'mb-3 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100')}>
-        {title}
-      </h3>
-      
-      <p className={cn(sacredStyles.text.body, 'text-gray-600 max-w-md mx-auto mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200')}>
-        {description}
-      </p>
-      
+      <h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
+      <p className="text-gray-600 mb-4">{description}</p>
       {action && (
         <button
           onClick={action.onClick}
-          className={cn(
-            sacredStyles.button.primary,
-            'animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300'
-          )}
+          className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
         >
           {action.label}
         </button>

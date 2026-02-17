@@ -4,6 +4,7 @@ import "./globals.css";
 import { ComparisonProvider } from "@/contexts/ComparisonContext";
 import SessionProvider from "@/contexts/SessionProvider";
 import ComparisonBar from "@/components/packages/ComparisonBar";
+import { Toaster } from "react-hot-toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -59,6 +60,28 @@ export default function RootLayout({
             {children}
             <ComparisonBar />
           </ComparisonProvider>
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#363636',
+                color: '#fff',
+              },
+              success: {
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#fff',
+                },
+              },
+              error: {
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
         </SessionProvider>
       </body>
     </html>

@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react';
 import { PriceCalculation, apiService, Package } from '@/lib/api';
 import { cn, sacredStyles, formatCurrency } from '@/lib/utils';
-import { Loader2, ShoppingCart, AlertCircle } from 'lucide-react';
+import { Loader2, ShoppingCart, AlertCircle, Users, CheckCircle } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { storeSelections } from '@/lib/package-selections';
-// import TravelerDetailsModal from './TravelerDetailsModal'; // REMOVED
+import toast from 'react-hot-toast';
 
 interface PriceCalculatorProps {
   packageSlug: string;
@@ -31,7 +31,7 @@ export default function PriceCalculator({
   const [price, setPrice] = useState<PriceCalculation | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // const [showTravelerModal, setShowTravelerModal] = useState(false); // REMOVED
+  const [redirecting, setRedirecting] = useState(false);
 
   // Debounce price calculation
   useEffect(() => {
@@ -66,7 +66,9 @@ export default function PriceCalculator({
     return () => clearTimeout(timer);
   }, [packageSlug, selections, isValid]);
 
-  const handleAddToPackage = () => {
+  const handleBookNow = () => {
+    setRedirecting(true);
+    
     // Check authentication status
     if (status === 'unauthenticated') {
       // Save current package state to sessionStorage for post-login restoration
@@ -78,6 +80,8 @@ export default function PriceCalculator({
         totalPrice: price?.total_price,
       }));
 
+      toast.loading('Redirecting to login...', { duration: 2000 });
+      
       // Redirect to login with return URL
       router.push(`/login?returnUrl=${encodeURIComponent(`/packages/${packageSlug}`)}`);
     } else if (status === 'authenticated') {
@@ -92,9 +96,9 @@ export default function PriceCalculator({
 
       console.log('Selections stored, redirecting with intent=book');
 
+      toast.loading('Preparing your booking...', { duration: 2000 });
+
       // Redirect to same page with intent param to trigger PackageDetailClient logic
-      // Using window.location to ensure full re-render/hook trigger if needed, 
-      // though router.push should work. Let's try router.push first.
       router.push(`/packages/${packageSlug}?intent=book`);
     }
     // If status is 'loading', do nothing (button will be disabled)
@@ -138,9 +142,9 @@ export default function PriceCalculator({
               {/* Experiences */}
               <div>
                 <div className="text-sm font-medium text-gray-700 mb-2">
-                  Experiences ({price.breakdown.experiences.length})
+                  Selected Experiences ({price.breakdown.experiences.length})
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1 pl-4">
                   {price.breakdown.experiences.map(exp => (
                     <div key={exp.id} className="flex justify-between text-sm">
                       <span className="text-gray-600">{exp.name}</span>
@@ -158,8 +162,8 @@ export default function PriceCalculator({
                   <span className="text-gray-600">
                     {price.breakdown.hotel_tier.name}
                   </span>
-                  <span className="font-medium">
-                    {price.breakdown.hotel_tier.price_multiplier}x
+                  <span className="font-medium text-blue-600">
+                    ×{price.breakdown.hotel_tier.price_multiplier}
                   </span>
                 </div>
 
@@ -173,42 +177,105 @@ export default function PriceCalculator({
                   </span>
                 </div>
               </div>
+
+              {/* Subtotal */}
+              {price.breakdown.subtotal_after_hotel && (
+                <div className="border-t border-gray-200 pt-3">
+                  <div className="flex justify-between text-sm font-medium">
+                    <span className="text-gray-700">Subtotal</span>
+                    <span className="text-gray-900">
+                      {formatCurrency(parseFloat(price.breakdown.subtotal_after_hotel))}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Applied Rules (Taxes & Charges) */}
+              {price.breakdown.applied_rules && price.breakdown.applied_rules.length > 0 && (
+                <div className="space-y-1 pl-4 border-l-2 border-orange-200">
+                  <div className="text-xs font-medium text-gray-500 uppercase mb-2">
+                    Taxes & Charges
+                  </div>
+                  {price.breakdown.applied_rules.map((rule, index) => (
+                    <div key={index} className="flex justify-between text-sm">
+                      <span className="text-gray-600">
+                        {rule.type === 'MARKUP' ? '+' : '-'} {rule.name}
+                        {rule.is_percentage && ` (${rule.value}%)`}
+                      </span>
+                      <span className={rule.type === 'MARKUP' ? 'text-orange-600 font-medium' : 'text-green-600 font-medium'}>
+                        {rule.type === 'MARKUP' ? '+' : '-'}
+                        {formatCurrency(parseFloat(rule.amount_applied))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Total */}
             <div className="border-t-2 border-gray-200 pt-4">
-              <div className="flex justify-between items-center mb-2">
+              <div className="flex justify-between items-center mb-3">
                 <span className="text-lg font-semibold text-gray-900">
-                  Total Price
+                  Total Payable
                 </span>
                 <span className="text-3xl font-bold text-orange-600">
                   {formatCurrency(parseFloat(price.total_price))}
                 </span>
               </div>
-              <p className="text-xs text-gray-500">{price.pricing_note}</p>
+
+              {/* Badges */}
+              <div className="space-y-2 mb-3">
+                <div className="flex items-center justify-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-lg">
+                  <Users className="w-4 h-4 text-orange-600" />
+                  <span className="text-sm font-medium text-orange-800">
+                    Price is per person
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-800">
+                    All taxes included • No hidden charges
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-xs text-gray-500 text-center">{price.pricing_note}</p>
             </div>
 
-            {/* Add to Package Button */}
+            {/* Book Now Button */}
             <button
               className={cn(
                 sacredStyles.button.primary,
                 "w-full flex items-center justify-center gap-2"
               )}
-              onClick={handleAddToPackage}
-              disabled={status === 'loading'}
+              onClick={handleBookNow}
+              disabled={status === 'loading' || redirecting}
             >
-              {status === 'loading' ? (
+              {redirecting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Redirecting...
+                </>
+              ) : status === 'loading' ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
                   <ShoppingCart className="w-5 h-5" />
-                  {status === 'unauthenticated' ? 'Sign In to Book' : 'Add to Package'}
+                  Book Now
                 </>
               )}
             </button>
 
+            {/* Helper text for unauthenticated users */}
+            {status === 'unauthenticated' && (
+              <p className="text-xs text-center text-gray-500">
+                You&apos;ll be asked to sign in to complete your booking
+              </p>
+            )}
+
             {/* Additional Info */}
-            <div className="text-xs text-gray-500 text-center">
+            <div className="text-xs text-gray-500 text-center space-y-1">
               <p>✓ Secure payment</p>
               <p>✓ Instant confirmation</p>
               <p>✓ 24/7 customer support</p>
@@ -216,8 +283,6 @@ export default function PriceCalculator({
           </>
         )}
       </div>
-
-      {/* Traveler Details Modal Removed */}
     </div>
   );
 }

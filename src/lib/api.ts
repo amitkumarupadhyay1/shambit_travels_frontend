@@ -733,6 +733,18 @@ export interface PriceCalculation {
       name: string;
       price: string;
     };
+    // NEW: Detailed pricing breakdown including taxes
+    subtotal_before_hotel?: string;
+    subtotal_after_hotel?: string;
+    applied_rules?: Array<{
+      name: string;
+      type: 'MARKUP' | 'DISCOUNT';
+      value: string;
+      is_percentage: boolean;
+      amount_applied: string;
+    }>;
+    total_markup?: string;
+    total_discount?: string;
   };
   pricing_note: string;
 }

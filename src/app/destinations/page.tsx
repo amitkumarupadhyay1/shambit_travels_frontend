@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { Suspense } from 'react';
 import DestinationsListingClient from '@/components/destinations/DestinationsListingClient';
 import { SkeletonGrid } from '@/components/common/SkeletonCard';
-import ErrorBoundary from '@/components/common/ErrorBoundary';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 export const metadata: Metadata = {
   title: 'Destinations | Explore Sacred Cities of India - ShamBit',

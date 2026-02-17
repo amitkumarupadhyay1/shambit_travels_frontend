@@ -1,8 +1,7 @@
 'use client';
 
 import { Component, ReactNode } from 'react';
-import { AlertTriangle } from 'lucide-react';
-import { cn, sacredStyles } from '@/lib/utils';
+import { AlertCircle } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -14,7 +13,7 @@ interface State {
   error?: Error;
 }
 
-class ErrorBoundary extends Component<Props, State> {
+export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = { hasError: false };
@@ -25,39 +24,26 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log error details for debugging
-    console.error('ErrorBoundary caught an error:', {
-      error: error.message,
-      stack: error.stack,
-      componentStack: errorInfo.componentStack,
-      timestamp: new Date().toISOString(),
-    });
-
-    // In production, you could send this to an error tracking service
-    // Example: Sentry.captureException(error, { contexts: { react: errorInfo } });
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
-      if (this.props.fallback) {
-        return this.props.fallback;
-      }
-
-      return (
-        <div className={cn(sacredStyles.container, 'py-16 text-center')}>
-          <div className={cn(sacredStyles.card, 'max-w-md mx-auto')}>
-            <AlertTriangle className="w-12 h-12 text-primary-saffron mx-auto mb-4" />
-            <h3 className={cn(sacredStyles.heading.h4, 'mb-4')}>
+      return this.props.fallback || (
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="text-center max-w-md">
+            <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
               Something went wrong
-            </h3>
-            <p className={cn(sacredStyles.text.body, 'mb-6')}>
-              We&apos;re sorry, but something unexpected happened. Please try refreshing the page.
+            </h2>
+            <p className="text-gray-600 mb-4">
+              {this.state.error?.message || 'An unexpected error occurred'}
             </p>
             <button
               onClick={() => window.location.reload()}
-              className={sacredStyles.button.primary}
+              className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
             >
-              Refresh Page
+              Reload Page
             </button>
           </div>
         </div>
@@ -67,5 +53,3 @@ class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-
-export default ErrorBoundary;
