@@ -175,7 +175,7 @@ const Header = () => {
       
       <header className={cn(
         "fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 font-sans shadow-sm transition-all duration-300",
-        scrolled ? "py-2" : "py-3 md:py-4"
+        scrolled ? "pb-2" : "pb-3 md:pb-4"
       )}>
         <TopBar />
         <div className={cn(sacredStyles.container, scrolled ? "py-2" : "py-2 md:py-3")}>
