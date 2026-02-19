@@ -243,7 +243,7 @@ class ApiService {
     }
   }
 
-  private async fetchApi<T>(endpoint: string, options?: RequestInit & { skipCache?: boolean }): Promise<T> {
+  private async fetchApi<T>(endpoint: string, options?: RequestInit & { skipCache?: boolean; skipAuth?: boolean; _isRetry?: boolean }): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
 
     // Check cache first (unless skipCache is true)
@@ -262,6 +262,11 @@ class ApiService {
     }
 
     console.log(`🔗 API Call: ${url}`);
+    
+    // Log if auth is being skipped
+    if (options?.skipAuth) {
+      console.log(`🔓 Skipping authentication for ${endpoint} (public endpoint)`);
+    }
 
     // Create abort controller for this request
     const controller = new AbortController();
@@ -279,34 +284,6 @@ class ApiService {
             await this.sleep(delay);
           }
 
-          // Get auth token if available - prioritise session token if exists
-          let token = null;
-
-          try {
-            if (typeof window === 'undefined') {
-              // Server-side
-              const { auth } = await import('./auth');
-              const session = await auth();
-              const sessionData = session as unknown as Record<string, unknown>;
-              const userData = sessionData?.user as Record<string, unknown> | undefined;
-              token = (userData?.accessToken as string) || (sessionData?.accessToken as string);
-            } else {
-              // Client-side
-              const { getSession } = await import('next-auth/react');
-              const session = await getSession();
-              const sessionData = session as unknown as Record<string, unknown>;
-              const userData = sessionData?.user as Record<string, unknown> | undefined;
-              token = (userData?.accessToken as string) || (sessionData?.accessToken as string);
-            }
-          } catch (error) {
-            console.warn('Failed to fetch session token:', error);
-          }
-
-          // Fallback to token manager if session token not found
-          if (!token) {
-            token = await tokenManager.getValidAccessToken();
-          }
-
           const headers: Record<string, string> = {
             'Content-Type': 'application/json',
           };
@@ -320,9 +297,40 @@ class ApiService {
             });
           }
 
-          // Add auth header if token exists
-          if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
+          // Get auth token if available - prioritise session token if exists
+          // Skip auth if explicitly requested (for public endpoints)
+          if (!options?.skipAuth) {
+            let token = null;
+            
+            try {
+              if (typeof window === 'undefined') {
+                // Server-side
+                const { auth } = await import('./auth');
+                const session = await auth();
+                const sessionData = session as unknown as Record<string, unknown>;
+                const userData = sessionData?.user as Record<string, unknown> | undefined;
+                token = (userData?.accessToken as string) || (sessionData?.accessToken as string);
+              } else {
+                // Client-side
+                const { getSession } = await import('next-auth/react');
+                const session = await getSession();
+                const sessionData = session as unknown as Record<string, unknown>;
+                const userData = sessionData?.user as Record<string, unknown> | undefined;
+                token = (userData?.accessToken as string) || (sessionData?.accessToken as string);
+              }
+            } catch (error) {
+              console.warn('Failed to fetch session token:', error);
+            }
+
+            // Fallback to token manager if session token not found
+            if (!token) {
+              token = await tokenManager.getValidAccessToken();
+            }
+
+            // Add auth header if token exists
+            if (token) {
+              headers['Authorization'] = `Bearer ${token}`;
+            }
           }
 
           const response = await fetch(url, {
@@ -337,7 +345,7 @@ class ApiService {
             const errorData = await response.json().catch(() => ({ error: 'Unknown error' })) as ApiError;
             console.error(`❌ API Error Response for ${endpoint}:`, errorData);
 
-            if (response.status === 401 && !(options as RequestInit & { _isRetry?: boolean })?._isRetry) {
+            if (response.status === 401 && !options?._isRetry) {
               console.log(`🔄 401 Unauthorized for ${endpoint}. Attempting to refresh token...`);
 
               try {
@@ -398,7 +406,7 @@ class ApiService {
                           'Authorization': `Bearer ${newAccessToken}`
                         },
                         _isRetry: true
-                      } as RequestInit & { skipCache?: boolean; _isRetry?: boolean });
+                      });
                     }
                   } else {
                     console.error(`❌ Token refresh request failed: ${refreshResponse.status}`);
@@ -483,22 +491,27 @@ class ApiService {
     }
   }
 
-  // Cities
+  // Cities (public endpoints - no auth required)
   async getCities(): Promise<City[]> {
     const response = await this.fetchApi<PaginatedResponse<City>>('/cities/', {
       skipCache: true,
+      skipAuth: true, // Public endpoint
     });
     return response.results;
   }
 
   async getCity(id: number): Promise<City> {
-    return this.fetchApi<City>(`/cities/${id}/`, { skipCache: true });
+    return this.fetchApi<City>(`/cities/${id}/`, { 
+      skipCache: true,
+      skipAuth: true, // Public endpoint
+    });
   }
 
-  // Articles
+  // Articles (public endpoints)
   async getArticles(): Promise<Article[]> {
     const response = await this.fetchApi<PaginatedResponse<Article>>('/articles/', {
       skipCache: true,
+      skipAuth: true, // Public endpoint
     });
     return response.results;
   }
@@ -506,6 +519,7 @@ class ApiService {
   async getFeaturedArticles(): Promise<Article[]> {
     const response = await this.fetchApi<PaginatedResponse<Article>>('/articles/', {
       skipCache: true,
+      skipAuth: true, // Public endpoint
     });
     return response.results;
   }
@@ -513,7 +527,7 @@ class ApiService {
   async getArticlesByCity(cityId: number): Promise<Article[]> {
     const response = await this.fetchApi<PaginatedResponse<Article>>(
       `/articles/?city=${cityId}`,
-      { skipCache: true }
+      { skipCache: true, skipAuth: true } // Public endpoint
     );
     return response.results;
   }
@@ -521,14 +535,15 @@ class ApiService {
   async getArticle(slug: string): Promise<Article> {
     return this.fetchApi<Article>(`/articles/${slug}/`, {
       skipCache: true,
+      skipAuth: true, // Public endpoint
     });
   }
 
-  // Packages
+  // Packages (public endpoints)
   async getPackages(): Promise<Package[]> {
     const response = await this.fetchApi<PaginatedResponse<Package>>(
       '/packages/packages/',
-      { skipCache: true }
+      { skipCache: true, skipAuth: true } // Public endpoint
     );
     return response.results;
   }
@@ -536,7 +551,7 @@ class ApiService {
   async getFeaturedPackages(): Promise<Package[]> {
     const response = await this.fetchApi<PaginatedResponse<Package>>(
       '/packages/packages/',
-      { skipCache: true }
+      { skipCache: true, skipAuth: true } // Public endpoint
     );
     return response.results;
   }
@@ -544,16 +559,16 @@ class ApiService {
   async getPackagesByCity(cityId: number): Promise<Package[]> {
     const response = await this.fetchApi<PaginatedResponse<Package>>(
       `/packages/packages/?city=${cityId}`,
-      { skipCache: true }
+      { skipCache: true, skipAuth: true } // Public endpoint
     );
     return response.results;
   }
 
-  // Experiences
+  // Experiences (public endpoints)
   async getExperiences(): Promise<Experience[]> {
     const response = await this.fetchApi<PaginatedResponse<Experience>>(
       '/packages/experiences/',
-      { skipCache: true }
+      { skipCache: true, skipAuth: true } // Public endpoint
     );
     return response.results;
   }
@@ -561,30 +576,35 @@ class ApiService {
   async getExperiencesByCity(cityId: number): Promise<Experience[]> {
     const response = await this.fetchApi<PaginatedResponse<Experience>>(
       `/packages/experiences/?city=${cityId}`,
-      { skipCache: true }
+      { skipCache: true, skipAuth: true } // Public endpoint
     );
     return response.results;
   }
 
-  // Hotel Tiers
+  // Hotel Tiers (public endpoints)
   async getHotelTiers(): Promise<HotelTier[]> {
-    const response = await this.fetchApi<PaginatedResponse<HotelTier>>('/packages/hotel-tiers/');
+    const response = await this.fetchApi<PaginatedResponse<HotelTier>>('/packages/hotel-tiers/', {
+      skipAuth: true, // Public endpoint
+    });
     return response.results;
   }
 
   async getHotelTiersByCity(cityId: number): Promise<HotelTier[]> {
-    const response = await this.fetchApi<PaginatedResponse<HotelTier>>(`/packages/hotel-tiers/?city=${cityId}`);
+    const response = await this.fetchApi<PaginatedResponse<HotelTier>>(`/packages/hotel-tiers/?city=${cityId}`, {
+      skipAuth: true, // Public endpoint
+    });
     return response.results;
   }
 
-  // Package Detail
+  // Package Detail (public endpoint)
   async getPackage(slug: string): Promise<Package> {
     return this.fetchApi<Package>(`/packages/packages/${slug}/`, {
       skipCache: true,
+      skipAuth: true, // Public endpoint
     });
   }
 
-  // Price Calculation
+  // Price Calculation (public endpoint)
   async calculatePrice(
     slug: string,
     selections: {
@@ -599,13 +619,16 @@ class ApiService {
         method: 'POST',
         body: JSON.stringify(selections),
         skipCache: true, // Never cache price calculations
+        skipAuth: true, // Public endpoint
       }
     );
   }
 
-  // Price Range
+  // Price Range (public endpoint)
   async getPriceRange(slug: string): Promise<PriceRange> {
-    return this.fetchApi<PriceRange>(`/packages/packages/${slug}/price_range/`);
+    return this.fetchApi<PriceRange>(`/packages/packages/${slug}/price_range/`, {
+      skipAuth: true, // Public endpoint
+    });
   }
 
   // Bookings
@@ -616,6 +639,31 @@ class ApiService {
       body: JSON.stringify(data),
       skipCache: true,
       headers: options?.headers,
+    });
+  }
+
+  async previewBooking(data: {
+    package_id: number;
+    experience_ids: number[];
+    hotel_tier_id: number;
+    transport_option_id: number;
+    num_travelers: number;
+    traveler_details?: Array<{ name: string; age: number; gender?: string }>;
+  }): Promise<BookingPreview> {
+    console.log('Previewing booking with data:', data);
+    console.log('🔓 Preview endpoint is PUBLIC - no auth required');
+    return this.fetchApi<BookingPreview>('/bookings/preview/', {
+      method: 'POST',
+      body: JSON.stringify({
+        package_id: data.package_id,
+        selected_experience_ids: data.experience_ids,
+        hotel_tier_id: data.hotel_tier_id,
+        transport_option_id: data.transport_option_id,
+        num_travelers: data.num_travelers,
+        traveler_details: data.traveler_details,
+      }),
+      skipCache: true,
+      skipAuth: true, // Public endpoint - no auth required
     });
   }
 
@@ -646,7 +694,7 @@ class ApiService {
     });
   }
 
-  // Universal Search
+  // Universal Search (public endpoint)
   async universalSearch(
     query: string,
     options?: {
@@ -680,6 +728,7 @@ class ApiService {
 
     const response = await this.fetchApi<SearchResponse>(endpoint, {
       skipCache: true, // Skip cache for now to debug
+      skipAuth: true, // Public endpoint
     });
 
     console.log('✅ universalSearch response:', response);
@@ -690,14 +739,15 @@ class ApiService {
   async getSearchStats(): Promise<SearchStats> {
     return this.fetchApi<SearchStats>('/search/stats/', {
       skipCache: true,
+      skipAuth: true, // Public endpoint
     });
   }
 
-  // Media
+  // Media (public endpoint)
   async getMediaForObject(contentType: string, objectId: number): Promise<MediaItem[]> {
     return this.fetchApi<MediaItem[]>(
       `/media/for_object/?content_type=${contentType}&object_id=${objectId}`,
-      { skipCache: true }
+      { skipCache: true, skipAuth: true } // Public endpoint
     );
   }
 }
@@ -815,6 +865,11 @@ export interface BookingDetail {
   selected_transport: TransportOption;
   booking_date: string;
   num_travelers: number;
+  traveler_details?: Array<{
+    name: string;
+    age: number;
+    gender?: string;
+  }>;
   customer_name: string;
   customer_email: string;
   customer_phone: string;
@@ -833,6 +888,16 @@ export interface PaymentInitiation {
   amount: number; // in paise
   currency: string;
   booking_id: number;
+}
+
+// Booking Preview Response (for review page)
+export interface BookingPreview {
+  per_person_price: string;
+  num_travelers: number;
+  chargeable_travelers: number;
+  total_amount: string;
+  chargeable_age_threshold: number;
+  price_breakdown: PriceBreakdown;
 }
 
 export const apiService = new ApiService();

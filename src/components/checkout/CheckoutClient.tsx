@@ -260,56 +260,103 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
               Traveler Information
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start gap-3">
-                <Users className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Number of Travelers</p>
-                  <p className="text-sm text-gray-900">{booking.num_travelers}</p>
+            <div className="space-y-4">
+              {/* Traveler Details List */}
+              {booking.traveler_details && booking.traveler_details.length > 0 ? (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">Travelers</h3>
+                  {booking.traveler_details.map((traveler: { name: string; age: number; gender?: string }, index: number) => {
+                    const isFree = traveler.age < 5;
+                    return (
+                      <div
+                        key={index}
+                        className={cn(
+                          "p-3 rounded-lg border",
+                          isFree ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"
+                        )}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3">
+                            <div className={cn(
+                              "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                              isFree ? "bg-green-100" : "bg-orange-100"
+                            )}>
+                              <Users className={cn("w-4 h-4", isFree ? "text-green-600" : "text-orange-600")} />
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">{traveler.name}</p>
+                              <p className="text-sm text-gray-600">
+                                {traveler.age} years
+                                {traveler.gender && ` • ${traveler.gender.charAt(0).toUpperCase() + traveler.gender.slice(1)}`}
+                              </p>
+                            </div>
+                          </div>
+                          {isFree && (
+                            <span className="text-xs font-medium text-green-700 bg-green-100 px-2 py-1 rounded-full">
+                              Free
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <Calendar className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Travel Date</p>
-                  <p className="text-sm text-gray-900">
-                    {new Date(booking.booking_date).toLocaleDateString('en-IN', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-start gap-3">
+                    <Users className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Number of Travelers</p>
+                      <p className="text-sm text-gray-900">{booking.num_travelers}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="flex items-start gap-3">
-                <Mail className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Email</p>
-                  <p className="text-sm text-gray-900">{booking.customer_email}</p>
+              {/* Booking Date and Contact Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
+                <div className="flex items-start gap-3">
+                  <Calendar className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Travel Date</p>
+                    <p className="text-sm text-gray-900">
+                      {new Date(booking.booking_date).toLocaleDateString('en-IN', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-start gap-3">
-                <Phone className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Phone</p>
-                  <p className="text-sm text-gray-900">{booking.customer_phone}</p>
+                <div className="flex items-start gap-3">
+                  <Mail className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Email</p>
+                    <p className="text-sm text-gray-900">{booking.customer_email}</p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="md:col-span-2 flex items-start gap-3">
-                <div className="w-5 h-5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Contact Person</p>
-                  <p className="text-sm text-gray-900">{booking.customer_name}</p>
+                <div className="flex items-start gap-3">
+                  <Phone className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Phone</p>
+                    <p className="text-sm text-gray-900">{booking.customer_phone}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Contact Person</p>
+                    <p className="text-sm text-gray-900">{booking.customer_name}</p>
+                  </div>
                 </div>
               </div>
 
               {booking.special_requests && (
-                <div className="md:col-span-2 flex items-start gap-3">
+                <div className="flex items-start gap-3 pt-4 border-t border-gray-200">
                   <div className="w-5 h-5 flex-shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-gray-700">Special Requests</p>
