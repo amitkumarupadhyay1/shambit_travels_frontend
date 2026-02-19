@@ -72,9 +72,17 @@ export default function PaymentModal({
 
         setIsLoading(false);
 
+        // Debug: Log the Razorpay key
+        const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+        console.log('🔑 Razorpay Key:', razorpayKey ? `${razorpayKey.substring(0, 10)}...` : 'MISSING');
+        
+        if (!razorpayKey) {
+          throw new Error('Razorpay key is not configured. Please check NEXT_PUBLIC_RAZORPAY_KEY_ID environment variable.');
+        }
+
         // Configure Razorpay options
         const options = {
-          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '',
+          key: razorpayKey,
           amount: paymentData.amount,
           currency: paymentData.currency,
           name: 'ShamBit',
