@@ -56,33 +56,52 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
     setError(null);
 
     try {
-      // Validate amount before initiating payment
-      const expectedAmountInPaise = Math.round(totalAmount * 100);
+      // Step 1: Validate payment amount with backend (source of truth)
+      console.log('Step 1: Validating payment amount with backend...');
+      const validation = await apiService.validateBookingPayment(booking.id);
       
-      // Initiate payment
-      const paymentData = await apiService.initiatePayment(booking.id);
+      console.log('Payment validation response:', validation);
       
-      // Validate payment amount matches expected
-      if (paymentData.amount !== expectedAmountInPaise) {
+      // Step 2: Verify validation matches displayed amount
+      const displayedAmount = parseFloat(breakdown.total_amount);
+      const validatedAmount = parseFloat(validation.total_amount);
+      
+      if (Math.abs(displayedAmount - validatedAmount) > 0.01) {
         throw new Error(
-          `Payment amount mismatch detected. ` +
-          `Expected ₹${totalAmount.toFixed(2)}, but payment gateway shows ₹${(paymentData.amount / 100).toFixed(2)}. ` +
-          `This may indicate a pricing error. Please refresh the page and try again, or contact support.`
+          `Price mismatch detected. Displayed: ₹${displayedAmount.toFixed(2)}, ` +
+          `Validated: ₹${validatedAmount.toFixed(2)}. Please refresh the page.`
         );
       }
       
-      console.log('Payment amount validated:', {
-        expected: expectedAmountInPaise,
-        received: paymentData.amount,
+      console.log('✅ Validation passed:', {
+        displayed: displayedAmount,
+        validated: validatedAmount,
         match: true
       });
       
-      // Open payment modal
+      // Step 3: Initiate payment
+      console.log('Step 2: Initiating payment...');
+      const paymentData = await apiService.initiatePayment(booking.id);
+      
+      // Step 4: Verify payment amount matches validation
+      if (paymentData.amount !== validation.amount_in_paise) {
+        throw new Error(
+          `Payment gateway amount mismatch. ` +
+          `Expected: ${validation.amount_in_paise} paise, ` +
+          `Received: ${paymentData.amount} paise. Please try again.`
+        );
+      }
+      
+      console.log('✅ Payment initiated successfully:', {
+        razorpay_order_id: paymentData.razorpay_order_id,
+        amount_in_paise: paymentData.amount,
+        amount_in_rupees: (paymentData.amount / 100).toFixed(2),
+        booking_id: paymentData.booking_id
+      });
+      
+      // Step 5: Open payment modal
       setShowPaymentModal(true);
       setIsProcessing(false);
-
-      // Payment modal will handle the Razorpay integration
-      console.log('Payment initiated:', paymentData);
     } catch (err) {
       console.error('Failed to initiate payment:', err);
       setError(err instanceof Error ? err.message : 'Failed to initiate payment. Please try again.');
@@ -170,9 +189,25 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
         <h1 className={cn(sacredStyles.heading.h1, "mb-2")}>
           Checkout
         </h1>
-        <p className={cn(sacredStyles.text.body, "text-gray-600")}>
+        <p className={cn(sacredStyles.text.body, "text-gray-600 mb-4")}>
           Review your booking details and complete payment
         </p>
+        
+        {/* Trust Indicators */}
+        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-green-600" aria-hidden="true" />
+            <span>SSL Encrypted</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-green-600" aria-hidden="true" />
+            <span>Money-Back Guarantee</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Phone className="w-4 h-4 text-green-600" aria-hidden="true" />
+            <span>24/7 Support</span>
+          </div>
+        </div>
       </div>
 
       {/* Error Message */}
@@ -504,6 +539,46 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
                 {breakdown.chargeable_travelers && breakdown.chargeable_travelers !== numTravelers && (
                   <span>This includes {breakdown.chargeable_travelers} chargeable traveler{breakdown.chargeable_travelers > 1 ? 's' : ''}.</span>
                 )}
+              </div>
+
+              {/* Payment Methods */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <p className="text-xs text-gray-600 text-center mb-3">We accept</p>
+                <div className="flex items-center justify-center gap-3 flex-wrap">
+                  <div className="px-3 py-2 bg-gray-50 rounded border border-gray-200 text-xs font-medium text-gray-700">
+                    💳 Cards
+                  </div>
+                  <div className="px-3 py-2 bg-gray-50 rounded border border-gray-200 text-xs font-medium text-gray-700">
+                    📱 UPI
+                  </div>
+                  <div className="px-3 py-2 bg-gray-50 rounded border border-gray-200 text-xs font-medium text-gray-700">
+                    🏦 Net Banking
+                  </div>
+                  <div className="px-3 py-2 bg-gray-50 rounded border border-gray-200 text-xs font-medium text-gray-700">
+                    💰 Wallets
+                  </div>
+                </div>
+              </div>
+              
+              {/* What Happens Next */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-blue-900 mb-3 text-sm">What happens next?</h4>
+                  <ul className="space-y-2 text-xs text-blue-800">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                      <span>Instant booking confirmation via email</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                      <span>Travel documents within 48 hours</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                      <span>24/7 customer support for your journey</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
 
               {/* Security Badges */}

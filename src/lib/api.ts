@@ -687,6 +687,13 @@ class ApiService {
     });
   }
 
+  async validateBookingPayment(bookingId: number): Promise<PaymentValidation> {
+    return this.fetchApi<PaymentValidation>(`/bookings/${bookingId}/validate_payment/`, {
+      method: 'POST',
+      skipCache: true,
+    });
+  }
+
   async cancelBooking(bookingId: number): Promise<{ message: string }> {
     return this.fetchApi<{ message: string }>(`/bookings/${bookingId}/cancel/`, {
       method: 'POST',
@@ -875,6 +882,7 @@ export interface BookingDetail {
   customer_phone: string;
   special_requests: string;
   total_price: string; // Per-person price from backend
+  total_amount_paid?: string; // Total amount charged (NEW)
   price_breakdown: PriceBreakdown; // Complete breakdown from backend
   status: 'DRAFT' | 'PENDING_PAYMENT' | 'CONFIRMED' | 'CANCELLED' | 'EXPIRED';
   expires_at: string | null;
@@ -888,6 +896,17 @@ export interface PaymentInitiation {
   amount: number; // in paise
   currency: string;
   booking_id: number;
+}
+
+// Payment Validation Response (NEW)
+export interface PaymentValidation {
+  booking_id: number;
+  per_person_price: string;
+  chargeable_travelers: number;
+  total_amount: string;
+  amount_in_paise: number;
+  currency: string;
+  validated_at: string;
 }
 
 // Booking Preview Response (for review page)

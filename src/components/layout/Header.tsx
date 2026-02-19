@@ -16,6 +16,7 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const router = useRouter();
   const { data: session, status } = useSession();
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -46,6 +47,16 @@ const Header = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isUserMenuOpen]);
+
+  // Scroll detection for compact header
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Keyboard shortcut: Cmd/Ctrl + K to open search
   useEffect(() => {
@@ -153,13 +164,28 @@ const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 font-sans shadow-sm">
-      <TopBar />
-      <div className={cn(sacredStyles.container, "py-3 md:py-4")}>
-        <div className="flex items-center justify-between gap-4">
+    <>
+      {/* Skip to main content link for accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-orange-600 focus:text-white focus:rounded-lg focus:shadow-lg"
+      >
+        Skip to main content
+      </a>
+      
+      <header className={cn(
+        "fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 font-sans shadow-sm transition-all duration-300",
+        scrolled ? "py-2" : "py-3 md:py-4"
+      )}>
+        <TopBar />
+        <div className={cn(sacredStyles.container, scrolled ? "py-2" : "py-2 md:py-3")}>
+          <div className="flex items-center justify-between gap-4">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 flex-shrink-0">
-            <div className="text-xl sm:text-2xl lg:text-3xl font-playfair font-bold tracking-tight">
+            <div className={cn(
+              "font-playfair font-bold tracking-tight transition-all duration-300",
+              scrolled ? "text-xl sm:text-2xl" : "text-xl sm:text-2xl lg:text-3xl"
+            )}>
               <span className="midnight-blue-gradient-text">Sham</span>
               <span className="sacred-gradient-text">Bit</span>
             </div>
@@ -537,6 +563,7 @@ const Header = () => {
         </AnimatePresence>
       </div>
     </header>
+    </>
   );
 };
 

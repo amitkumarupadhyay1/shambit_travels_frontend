@@ -106,8 +106,13 @@ export default function PriceCalculator({
 
   return (
     <div className="sticky top-24">
-      <div className={cn(sacredStyles.card, "space-y-6")}>
+      <div className={cn(sacredStyles.card, "space-y-6")} role="region" aria-label="Package price calculator">
         <h3 className={sacredStyles.heading.h4}>Your Package Summary</h3>
+        
+        {/* Live region for screen readers to announce price changes */}
+        <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+          {price && `Total price updated: ${formatCurrency(parseFloat(price.total_price))} per person`}
+        </div>
 
         {/* Loading State */}
         {loading && (
@@ -245,6 +250,7 @@ export default function PriceCalculator({
 
             {/* Book Now Button */}
             <button
+              data-book-now-button
               className={cn(
                 sacredStyles.button.primary,
                 "w-full flex items-center justify-center gap-2"

@@ -37,9 +37,7 @@ export default async function PackageDetailPage({ params }: PackageDetailPagePro
   return (
     <main className="min-h-screen bg-gradient-to-b from-orange-50/30 to-white">
       <Header />
-      <div className="pt-[120px] md:pt-[140px]">
-        <PackageDetailClient packageData={packageData} />
-      </div>
+      <PackageDetailClient packageData={packageData} />
       <Footer />
     </main>
   );
