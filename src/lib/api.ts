@@ -701,6 +701,27 @@ class ApiService {
     });
   }
 
+  async downloadVoucher(bookingId: number): Promise<Blob> {
+    // Note: This endpoint needs to be implemented in the backend
+    // For now, we'll create a placeholder that returns a promise
+    const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/voucher/`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${tokenManager.getAccessToken()}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new ApiException(
+        'Failed to download voucher',
+        response.status,
+        'The voucher could not be generated. Please try again later.'
+      );
+    }
+
+    return await response.blob();
+  }
+
   // Universal Search (public endpoint)
   async universalSearch(
     query: string,

@@ -2,10 +2,13 @@
 
 import { useSession } from "next-auth/react"
 import Link from "next/link"
-import { Calendar, MapPin, CheckCircle2, ArrowRight, FileText, Compass, Package, Clock, Loader2 } from "lucide-react"
+import { Calendar, MapPin, CheckCircle2, ArrowRight, FileText, Compass, Package, Clock } from "lucide-react"
 import { useState, useEffect } from "react"
 import { apiService, BookingDetail } from "@/lib/api"
 import { formatCurrency } from "@/lib/utils"
+import { motion } from "framer-motion"
+import { staggerContainer, staggerItem, cardHover } from "@/lib/animations"
+import { SkeletonHero, SkeletonStat, SkeletonCard } from "@/components/common/SkeletonCard"
 
 export default function DashboardPage() {
     const { data: session, status } = useSession()
@@ -91,18 +94,30 @@ export default function DashboardPage() {
     // Loading state
     if (loading) {
         return (
-            <div className="space-y-6">
-                <div className="animate-pulse">
-                    <div className="h-8 bg-gray-200 rounded w-1/3 mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                </div>
-                <div className="bg-gray-200 rounded-2xl h-48 animate-pulse"></div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <motion.div 
+                className="space-y-6"
+                initial="hidden"
+                animate="visible"
+                variants={staggerContainer}
+            >
+                <motion.div variants={staggerItem}>
+                    <div className="h-8 bg-gray-200 rounded w-1/3 mb-2 animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/4 animate-pulse"></div>
+                </motion.div>
+                <motion.div variants={staggerItem}>
+                    <SkeletonHero />
+                </motion.div>
+                <motion.div variants={staggerItem} className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[1, 2, 3].map(i => (
-                        <div key={i} className="bg-gray-200 rounded-xl h-24 animate-pulse"></div>
+                        <SkeletonStat key={i} />
                     ))}
-                </div>
-            </div>
+                </motion.div>
+                <motion.div variants={staggerItem} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[1, 2, 3].map(i => (
+                        <SkeletonCard key={i} />
+                    ))}
+                </motion.div>
+            </motion.div>
         )
     }
 
@@ -130,18 +145,30 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <motion.div 
+            className="space-y-6"
+            initial="hidden"
+            animate="visible"
+            variants={staggerContainer}
+        >
             {/* Greeting Section */}
-            <div>
+            <motion.div variants={staggerItem}>
                 <h1 className="text-3xl font-playfair font-semibold text-gray-900">
                     Welcome back, {getUserFirstName()}.
                 </h1>
                 <p className="text-sm text-gray-500 mt-1">A Bit of Goodness in Every Deal</p>
-            </div>
+            </motion.div>
 
             {/* Upcoming Trip Card - Hero Element */}
+            <motion.div variants={staggerItem}>
             {upcomingBooking ? (
-                <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 border border-orange-100 shadow-sm hover:shadow-md transition-shadow">
+                <motion.div 
+                    className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 border border-orange-100 shadow-sm"
+                    variants={cardHover}
+                    initial="rest"
+                    whileHover="hover"
+                    transition={{ duration: 0.2 }}
+                >
                     <div className="flex items-start justify-between mb-4">
                         <div>
                             <p className="text-sm font-medium text-orange-700 mb-1">Upcoming Trip</p>
@@ -185,18 +212,36 @@ export default function DashboardPage() {
                             View Details
                         </Link>
                         <button 
-                            className="flex-1 bg-gradient-to-r from-orange-600 to-amber-600 text-white font-medium px-4 py-2.5 rounded-lg hover:shadow-lg transition-all text-sm"
-                            onClick={() => {
-                                // TODO: Implement download voucher
-                                alert('Download voucher feature coming soon!')
+                            className="flex-1 bg-gradient-to-r from-orange-600 to-amber-600 text-white font-medium px-4 py-2.5 rounded-lg hover:shadow-lg transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={async () => {
+                                try {
+                                    const blob = await apiService.downloadVoucher(upcomingBooking.id);
+                                    const url = window.URL.createObjectURL(blob);
+                                    const link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = `ShamBit-Voucher-${upcomingBooking.booking_reference || upcomingBooking.id}.pdf`;
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                    window.URL.revokeObjectURL(url);
+                                } catch (error) {
+                                    console.error('Download failed:', error);
+                                    alert('Download voucher feature is not yet available. Please contact support.');
+                                }
                             }}
                         >
                             Download Voucher
                         </button>
                     </div>
-                </div>
+                </motion.div>
             ) : (
-                <div className="bg-white rounded-2xl p-8 border border-gray-200 text-center hover:border-orange-200 transition-colors">
+                <motion.div 
+                    className="bg-white rounded-2xl p-8 border border-gray-200 text-center"
+                    variants={cardHover}
+                    initial="rest"
+                    whileHover="hover"
+                    transition={{ duration: 0.2 }}
+                >
                     <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Compass className="w-8 h-8 text-orange-600" />
                     </div>
@@ -213,12 +258,20 @@ export default function DashboardPage() {
                         Explore Packages
                         <ArrowRight className="w-4 h-4 ml-2" />
                     </Link>
-                </div>
+                </motion.div>
             )}
+            </motion.div>
 
             {/* Booking Overview Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white rounded-xl p-5 border border-gray-200">
+            <motion.div 
+                className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                variants={staggerItem}
+            >
+                <motion.div 
+                    className="bg-white rounded-xl p-5 border border-gray-200"
+                    whileHover={{ y: -4, boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}
+                    transition={{ duration: 0.2 }}
+                >
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm text-gray-600 mb-1">Total Bookings</p>
@@ -228,9 +281,13 @@ export default function DashboardPage() {
                             <Package className="w-6 h-6 text-orange-600" />
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
-                <div className="bg-white rounded-xl p-5 border border-gray-200">
+                <motion.div 
+                    className="bg-white rounded-xl p-5 border border-gray-200"
+                    whileHover={{ y: -4, boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}
+                    transition={{ duration: 0.2 }}
+                >
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm text-gray-600 mb-1">Upcoming Trips</p>
@@ -240,9 +297,13 @@ export default function DashboardPage() {
                             <Clock className="w-6 h-6 text-blue-600" />
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
-                <div className="bg-white rounded-xl p-5 border border-gray-200">
+                <motion.div 
+                    className="bg-white rounded-xl p-5 border border-gray-200"
+                    whileHover={{ y: -4, boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}
+                    transition={{ duration: 0.2 }}
+                >
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm text-gray-600 mb-1">Completed Trips</p>
@@ -252,11 +313,14 @@ export default function DashboardPage() {
                             <CheckCircle2 className="w-6 h-6 text-green-600" />
                         </div>
                     </div>
-                </div>
-            </div>
+                </motion.div>
+            </motion.div>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <motion.div 
+                className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                variants={staggerItem}
+            >
                 <Link
                     href="/packages"
                     className="bg-white rounded-xl p-6 border border-gray-200 hover:border-orange-300 hover:shadow-md transition-all group"
@@ -289,10 +353,13 @@ export default function DashboardPage() {
                     <h3 className="font-semibold text-gray-900 mb-1">My Itineraries</h3>
                     <p className="text-sm text-gray-600">View all your bookings</p>
                 </Link>
-            </div>
+            </motion.div>
 
             {/* Recent Activity */}
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
+            <motion.div 
+                className="bg-white rounded-xl p-6 border border-gray-200"
+                variants={staggerItem}
+            >
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
                 
                 {bookings.length > 0 ? (
@@ -323,7 +390,7 @@ export default function DashboardPage() {
                         <p className="text-gray-500 text-sm">No recent activity</p>
                     </div>
                 )}
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     )
 }

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { CheckCircle, Calendar, Users, Mail, Phone, Download, MapPin, Clock, AlertCircle, Package as PackageIcon } from 'lucide-react';
 import { cn, sacredStyles, formatCurrency } from '@/lib/utils';
 import { BookingDetail } from '@/lib/api';
+import BookingTimeline from './BookingTimeline';
 
 interface BookingConfirmationClientProps {
   booking: BookingDetail;
@@ -158,6 +159,19 @@ export default function BookingConfirmationClient({ booking }: BookingConfirmati
       </div>
 
       {/* What's Next */}
+      <div className={cn(sacredStyles.card, "mb-8")}>
+        <h2 className={cn(sacredStyles.heading.h3, "mb-6")}>
+          Booking Progress
+        </h2>
+        
+        <BookingTimeline 
+          bookingDate={booking.booking_date}
+          createdAt={booking.created_at}
+          status={booking.status}
+        />
+      </div>
+
+      {/* What's Next - Additional Info */}
       <div className={cn(sacredStyles.card, "mb-8")}>
         <h2 className={cn(sacredStyles.heading.h3, "mb-6")}>
           What Happens Next?

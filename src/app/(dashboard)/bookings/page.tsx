@@ -6,12 +6,14 @@ import { Loader2, Calendar, Search, Package as PackageIcon, Clock, Download } fr
 import Link from "next/link"
 import { apiService, BookingDetail } from "@/lib/api"
 import { formatCurrency } from "@/lib/utils"
+import toast from 'react-hot-toast'
 
 export default function BookingsPage() {
     const { status } = useSession()
     const [bookings, setBookings] = useState<BookingDetail[]>([])
     const [loading, setLoading] = useState(true)
     const [filter, setFilter] = useState<'all' | 'upcoming' | 'past' | 'cancelled'>('all')
+    const [downloadingId, setDownloadingId] = useState<number | null>(null)
 
     useEffect(() => {
         const fetchBookings = async () => {
@@ -51,6 +53,27 @@ export default function BookingsPage() {
 
     const getStatusLabel = (status: string) => {
         return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+    }
+
+    const handleDownloadVoucher = async (bookingId: number, bookingReference?: string) => {
+        setDownloadingId(bookingId)
+        try {
+            const blob = await apiService.downloadVoucher(bookingId)
+            const url = window.URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `ShamBit-Voucher-${bookingReference || bookingId}.pdf`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            window.URL.revokeObjectURL(url)
+            toast.success('Voucher downloaded successfully!')
+        } catch (error) {
+            console.error('Download failed:', error)
+            toast.error('Download voucher feature is not yet available. Please contact support.')
+        } finally {
+            setDownloadingId(null)
+        }
     }
 
     const filteredBookings = bookings.filter(booking => {
@@ -230,14 +253,21 @@ export default function BookingsPage() {
                                     </Link>
                                     {booking.status === 'CONFIRMED' && (
                                         <button
-                                            className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
-                                            onClick={() => {
-                                                // TODO: Implement download voucher
-                                                alert('Download voucher feature coming soon!')
-                                            }}
+                                            className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            onClick={() => handleDownloadVoucher(booking.id, booking.booking_reference)}
+                                            disabled={downloadingId === booking.id}
                                         >
-                                            <Download className="w-4 h-4" />
-                                            Download Voucher
+                                            {downloadingId === booking.id ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                    Downloading...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Download className="w-4 h-4" />
+                                                    Download Voucher
+                                                </>
+                                            )}
                                         </button>
                                     )}
                                 </div>
