@@ -694,6 +694,26 @@ class ApiService {
     });
   }
 
+  async verifyPayment(
+    bookingId: number,
+    paymentData: {
+      razorpay_payment_id: string;
+      razorpay_order_id: string;
+      razorpay_signature: string;
+    }
+  ): Promise<{
+    success: boolean;
+    message: string;
+    booking_status: string;
+    booking_reference: string;
+  }> {
+    return this.fetchApi(`/bookings/${bookingId}/verify_payment/`, {
+      method: 'POST',
+      body: JSON.stringify(paymentData),
+      skipCache: true,
+    });
+  }
+
   async cancelBooking(bookingId: number): Promise<{ message: string }> {
     return this.fetchApi<{ message: string }>(`/bookings/${bookingId}/cancel/`, {
       method: 'POST',

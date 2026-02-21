@@ -32,7 +32,7 @@ declare global {
 interface PaymentModalProps {
   bookingId: number;
   amount: number;
-  onSuccess: (paymentId: string) => void;
+  onSuccess: (response: RazorpayResponse) => void;
   onFailure: (error: string) => void;
   onClose: () => void;
 }
@@ -90,7 +90,7 @@ export default function PaymentModal({
           order_id: paymentData.razorpay_order_id,
           handler: function (response: RazorpayResponse) {
             console.log('Payment successful:', response);
-            onSuccess(response.razorpay_payment_id);
+            onSuccess(response);
           },
           prefill: {
             name: '',

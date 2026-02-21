@@ -110,64 +110,40 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
     }
   };
 
-  const handlePaymentSuccess = (paymentId: string) => {
-    console.log('Payment successful:', paymentId);
+  const handlePaymentSuccess = async (response: {
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
+  }) => {
+    console.log('Payment successful:', response.razorpay_payment_id);
     setShowPaymentModal(false);
     
-    // Start polling booking status
+    // Verify payment with backend immediately
     toast.loading('Verifying payment...', { id: 'payment-verify' });
-    pollBookingStatus();
-  };
-
-  const pollBookingStatus = async () => {
-    const maxAttempts = 30; // 30 attempts * 2 seconds = 60 seconds max
     
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      try {
-        // Wait 2 seconds before each poll
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Fetch latest booking status
-        const updatedBooking = await apiService.getBooking(booking.id);
-        
-        if (updatedBooking.status === 'CONFIRMED') {
-          toast.success('Payment confirmed!', { id: 'payment-verify' });
-          // Navigate to confirmation page
-          router.push(`/bookings/${updatedBooking.booking_reference || updatedBooking.id}`);
-          return;
-        }
-        
-        if (updatedBooking.status === 'CANCELLED') {
-          toast.error('Payment was cancelled', { id: 'payment-verify' });
-          setError('Payment was cancelled. Please try again.');
-          return;
-        }
-        
-        if (updatedBooking.status === 'EXPIRED') {
-          toast.error('Booking expired', { id: 'payment-verify' });
-          setError('Booking has expired. Please create a new booking.');
-          return;
-        }
-        
-        // Still pending, continue polling
-        console.log(`Polling attempt ${attempt + 1}/${maxAttempts}: Status is ${updatedBooking.status}`);
-        
-      } catch (err) {
-        console.error('Error polling booking status:', err);
-        // Continue polling even on error
+    try {
+      const verificationResult = await apiService.verifyPayment(booking.id, {
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_signature: response.razorpay_signature,
+      });
+      
+      if (verificationResult.success) {
+        toast.success('Payment confirmed!', { id: 'payment-verify' });
+        // Navigate to confirmation page
+        router.push(`/bookings/${verificationResult.booking_reference || booking.id}`);
+      } else {
+        throw new Error(verificationResult.message || 'Payment verification failed');
       }
+    } catch (err) {
+      console.error('Payment verification failed:', err);
+      toast.error('Payment verification failed. Please contact support.', { id: 'payment-verify' });
+      setError(
+        err instanceof Error 
+          ? err.message 
+          : 'Payment verification failed. Your payment was successful but we could not confirm your booking. Please contact support with your payment ID: ' + response.razorpay_payment_id
+      );
     }
-    
-    // Timeout reached
-    toast.dismiss('payment-verify');
-    toast.error(
-      'Payment verification is taking longer than expected. Please check your booking status in a few minutes.',
-      { duration: 8000 }
-    );
-    setError(
-      'Payment verification timeout. Your payment may still be processing. ' +
-      'Please check your email or contact support if you don\'t receive confirmation within 10 minutes.'
-    );
   };
 
   const handlePaymentFailure = (error: string) => {
