@@ -58,9 +58,16 @@ export default function HotelTierSelector({
               <p className="text-sm text-gray-600 mb-3">
                 {tier.description}
               </p>
-              <div className="text-sm font-medium text-orange-600">
-                {tier.price_multiplier}x multiplier
-              </div>
+              {/* PHASE 1: Show actual price per night if available */}
+              {tier.base_price_per_night ? (
+                <div className="text-sm font-medium text-orange-600">
+                  ₹{Number(tier.base_price_per_night).toLocaleString('en-IN')}/night
+                </div>
+              ) : (
+                <div className="text-sm font-medium text-orange-600">
+                  {tier.price_multiplier}x multiplier
+                </div>
+              )}
             </div>
           </button>
         ))}

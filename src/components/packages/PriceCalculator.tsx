@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PriceCalculation, apiService, Package } from '@/lib/api';
+import { PriceCalculation, apiService, Package, Experience } from '@/lib/api';
 import { cn, sacredStyles, formatCurrency } from '@/lib/utils';
 import { Loader2, ShoppingCart, AlertCircle, Users, CheckCircle } from 'lucide-react';
 import { useSession } from 'next-auth/react';
@@ -16,8 +16,17 @@ interface PriceCalculatorProps {
     experiences: number[];
     hotel: number | null;
     transport: number | null;
+    // PHASE 2: Date range and room count
+    startDate: string | null;
+    endDate: string | null;
+    numRooms: number;
   };
   isValid: boolean;
+  // Phase 2 props
+  selectedExperiences?: Experience[];
+  hotelTierMaxOccupancy?: number;
+  recommendedNights?: number;
+  numNights?: number;
 }
 
 export default function PriceCalculator({
@@ -25,6 +34,10 @@ export default function PriceCalculator({
   packageData,
   selections,
   isValid,
+  selectedExperiences = [], // eslint-disable-line @typescript-eslint/no-unused-vars
+  hotelTierMaxOccupancy = 2, // eslint-disable-line @typescript-eslint/no-unused-vars
+  recommendedNights = 1, // eslint-disable-line @typescript-eslint/no-unused-vars
+  numNights = 0, // eslint-disable-line @typescript-eslint/no-unused-vars
 }: PriceCalculatorProps) {
   const router = useRouter();
   const { status } = useSession();
@@ -50,6 +63,10 @@ export default function PriceCalculator({
           experience_ids: selections.experiences,
           hotel_tier_id: selections.hotel!,
           transport_option_id: selections.transport!,
+          // PHASE 2: Include date range and room count
+          start_date: selections.startDate || undefined,
+          end_date: selections.endDate || undefined,
+          num_rooms: selections.numRooms || 1,
         });
         setPrice(result);
       } catch (err) {
@@ -134,7 +151,7 @@ export default function PriceCalculator({
           <div className="text-center py-8">
             <ShoppingCart className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500 text-sm">
-              Select experiences, hotel tier, and transport to see pricing
+              Select experiences, dates, hotel tier, and transport to see pricing
             </p>
           </div>
         )}
@@ -162,15 +179,40 @@ export default function PriceCalculator({
               </div>
 
               <div className="border-t border-gray-200 pt-3">
-                {/* Hotel */}
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-gray-600">
-                    {price.breakdown.hotel_tier.name}
-                  </span>
-                  <span className="font-medium text-blue-600">
-                    ×{price.breakdown.hotel_tier.price_multiplier}
-                  </span>
-                </div>
+                {/* Hotel - PHASE 2: Show detailed breakdown if using new pricing */}
+                {price.breakdown.uses_new_hotel_pricing && price.breakdown.hotel_cost ? (
+                  <div className="mb-3">
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-700 font-medium">
+                        {price.breakdown.hotel_tier.name}
+                      </span>
+                    </div>
+                    <div className="pl-4 space-y-1 text-xs text-gray-600">
+                      <div className="flex justify-between">
+                        <span>
+                          {price.breakdown.hotel_num_rooms} room{price.breakdown.hotel_num_rooms! > 1 ? 's' : ''} × {price.breakdown.hotel_num_nights} night{price.breakdown.hotel_num_nights! > 1 ? 's' : ''}
+                        </span>
+                        <span className="font-medium text-gray-900">
+                          {formatCurrency(parseFloat(price.breakdown.hotel_cost))}
+                        </span>
+                      </div>
+                      {price.breakdown.hotel_cost_per_night && (
+                        <div className="text-gray-500">
+                          Avg: {formatCurrency(parseFloat(price.breakdown.hotel_cost_per_night))}/night
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-600">
+                      {price.breakdown.hotel_tier.name}
+                    </span>
+                    <span className="font-medium text-blue-600 text-xs">
+                      At checkout
+                    </span>
+                  </div>
+                )}
 
                 {/* Transport */}
                 <div className="flex justify-between text-sm">
@@ -246,6 +288,13 @@ export default function PriceCalculator({
               </div>
 
               <p className="text-xs text-gray-500 text-center">{price.pricing_note}</p>
+              
+              {/* PHASE 1: Hotel cost note */}
+              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs text-blue-800 text-center">
+                  <strong>Hotel costs</strong> will be calculated based on your selected dates and number of rooms at checkout
+                </p>
+              </div>
             </div>
 
             {/* Book Now Button */}

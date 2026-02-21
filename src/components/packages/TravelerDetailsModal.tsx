@@ -1,21 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { apiService } from '@/lib/api';
 import { cn, sacredStyles } from '@/lib/utils';
-import { X, Loader2, Calendar, Users, User, Mail, Phone, MessageSquare } from 'lucide-react';
+import { X, Loader2, Users, User, Mail, Phone, MessageSquare, Hotel } from 'lucide-react';
+import DateRangePicker from './DateRangePicker';
+import RoomSelector from './RoomSelector';
+import { Experience } from '@/lib/api';
 
-// Validation schema
+// Validation schema - PHASE 2: Updated with date range
 const travelerDetailsSchema = z.object({
   num_travelers: z.number().min(1, 'At least 1 traveler required').max(10, 'Maximum 10 travelers allowed'),
-  booking_date: z.string().min(1, 'Booking date is required'),
+  booking_start_date: z.string().min(1, 'Start date is required'),
+  booking_end_date: z.string().min(1, 'End date is required'),
+  num_rooms: z.number().min(1, 'At least 1 room required').max(10, 'Maximum 10 rooms allowed'),
   customer_name: z.string().min(2, 'Name must be at least 2 characters').max(255, 'Name too long'),
   customer_email: z.string().email('Invalid email address'),
   customer_phone: z.string().regex(/^\+?[1-9]\d{9,14}$/, 'Invalid phone number (e.g., +919876543210)'),
   special_requests: z.string().max(500, 'Special requests too long').optional(),
+  room_preferences: z.string().max(500, 'Room preferences too long').optional(),
+}).refine((data) => {
+  // Validate end date is after start date
+  const start = new Date(data.booking_start_date);
+  const end = new Date(data.booking_end_date);
+  return end > start;
+}, {
+  message: 'End date must be after start date',
+  path: ['booking_end_date'],
 });
 
 type TravelerDetailsForm = z.infer<typeof travelerDetailsSchema>;
@@ -25,12 +39,15 @@ interface TravelerDetailsModalProps {
   onClose: () => void;
   packageId: number;
   packageName: string;
-  packageSlug?: string; // Optional, used for logging/tracking
+  packageSlug?: string;
   selections: {
     experiences: number[];
     hotel: number;
     transport: number;
   };
+  // PHASE 2: New props
+  selectedExperiences?: Experience[]; // For trip duration calculation
+  hotelTierMaxOccupancy?: number; // For room calculation
   totalPrice: string;
   onBookingComplete: (bookingId: number) => void;
 }
@@ -42,11 +59,19 @@ export default function TravelerDetailsModal({
   packageName,
   packageSlug, // eslint-disable-line @typescript-eslint/no-unused-vars
   selections,
+  selectedExperiences = [],
+  hotelTierMaxOccupancy = 2,
   totalPrice,
   onBookingComplete,
 }: TravelerDetailsModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // PHASE 2: State for date range and rooms
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [numNights, setNumNights] = useState(1);
+  const [recommendedNights, setRecommendedNights] = useState(1);
 
   // Calculate minimum booking date (3 days from now)
   const getMinDate = () => {
@@ -54,38 +79,73 @@ export default function TravelerDetailsModal({
     date.setDate(date.getDate() + 3);
     return date.toISOString().split('T')[0];
   };
+  
+  // PHASE 2: Calculate recommended trip duration from experiences
+  useEffect(() => {
+    if (selectedExperiences && selectedExperiences.length > 0) {
+      const totalHours = selectedExperiences.reduce((sum, exp) => sum + exp.duration_hours, 0);
+      const days = Math.ceil(totalHours / 8);
+      const nights = Math.max(1, days - 1);
+      setRecommendedNights(nights);
+      
+      // Auto-set dates if not already set
+      if (!startDate) {
+        const minDate = getMinDate();
+        setStartDate(minDate);
+        const start = new Date(minDate);
+        start.setDate(start.getDate() + nights);
+        setEndDate(start.toISOString().split('T')[0]);
+      }
+    }
+  }, [selectedExperiences, startDate]);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     watch,
+    setValue,
   } = useForm<TravelerDetailsForm>({
     resolver: zodResolver(travelerDetailsSchema),
     defaultValues: {
       num_travelers: 1,
-      booking_date: getMinDate(),
+      booking_start_date: getMinDate(),
+      booking_end_date: '',
+      num_rooms: 1,
       customer_name: '',
       customer_email: '',
       customer_phone: '',
       special_requests: '',
+      room_preferences: '',
     },
   });
 
   const numTravelers = watch('num_travelers');
+  const numRooms = watch('num_rooms');
+  
+  // PHASE 2: Auto-calculate minimum rooms based on travelers
+  useEffect(() => {
+    const minRooms = Math.ceil(numTravelers / hotelTierMaxOccupancy);
+    if (numRooms < minRooms) {
+      setValue('num_rooms', minRooms);
+    }
+  }, [numTravelers, hotelTierMaxOccupancy, numRooms, setValue]);
 
   const onSubmit = async (data: TravelerDetailsForm) => {
     setIsSubmitting(true);
     setError(null);
 
     try {
-      // Create booking using the API service
+      // PHASE 2: Create booking with date range and room info
       const booking = await apiService.createBooking({
         package_id: packageId,
         experience_ids: selections.experiences,
         hotel_tier_id: selections.hotel,
         transport_option_id: selections.transport,
-        booking_date: data.booking_date,
+        booking_date: data.booking_start_date, // Start date (backward compatible)
+        booking_end_date: data.booking_end_date, // PHASE 2: End date
+        num_rooms: data.num_rooms, // PHASE 1: Number of rooms
+        room_preferences: data.room_preferences, // PHASE 1: Room preferences
         num_travelers: data.num_travelers,
         customer_name: data.customer_name,
         customer_email: data.customer_email,
@@ -172,33 +232,78 @@ export default function TravelerDetailsModal({
               {errors.num_travelers && (
                 <p className="text-xs text-red-600 mt-1">{errors.num_travelers.message}</p>
               )}
-              <p className="text-xs text-gray-500 mt-1">
-                Total price for {numTravelers} {numTravelers === 1 ? 'traveler' : 'travelers'}: ₹{(parseFloat(totalPrice) * numTravelers).toFixed(2)}
-              </p>
             </div>
 
-            {/* Booking Date */}
+            {/* PHASE 2: Date Range Picker */}
             <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                <Calendar className="w-4 h-4" />
-                Travel Date
-              </label>
-              <input
-                type="date"
-                {...register('booking_date')}
-                min={getMinDate()}
-                className={cn(
-                  "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500",
-                  errors.booking_date ? "border-red-300" : "border-gray-300"
-                )}
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                recommendedNights={recommendedNights}
+                onChange={(start, end, nights) => {
+                  setStartDate(start);
+                  setEndDate(end);
+                  setNumNights(nights);
+                  setValue('booking_start_date', start);
+                  setValue('booking_end_date', end);
+                }}
+                disabled={isSubmitting}
               />
-              {errors.booking_date && (
-                <p className="text-xs text-red-600 mt-1">{errors.booking_date.message}</p>
+              {errors.booking_start_date && (
+                <p className="text-xs text-red-600 mt-1">{errors.booking_start_date.message}</p>
               )}
-              <p className="text-xs text-gray-500 mt-1">
-                Bookings must be made at least 3 days in advance
-              </p>
+              {errors.booking_end_date && (
+                <p className="text-xs text-red-600 mt-1">{errors.booking_end_date.message}</p>
+              )}
             </div>
+
+            {/* PHASE 1: Room Selector */}
+            <div>
+              <RoomSelector
+                numTravelers={numTravelers}
+                maxOccupancyPerRoom={hotelTierMaxOccupancy}
+                selectedRooms={numRooms}
+                onChange={(rooms) => setValue('num_rooms', rooms)}
+                disabled={isSubmitting}
+              />
+              {errors.num_rooms && (
+                <p className="text-xs text-red-600 mt-1">{errors.num_rooms.message}</p>
+              )}
+            </div>
+
+            {/* Pricing Summary */}
+            {startDate && endDate && numNights > 0 && (
+              <div className="p-4 bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-3">Pricing Summary</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Per person price:</span>
+                    <span className="font-medium">₹{parseFloat(totalPrice).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Number of travelers:</span>
+                    <span className="font-medium">×{numTravelers}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Trip duration:</span>
+                    <span className="font-medium">{numNights} night{numNights > 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Rooms required:</span>
+                    <span className="font-medium">{numRooms} room{numRooms > 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="pt-2 border-t border-orange-300 flex justify-between">
+                    <span className="font-semibold text-gray-900">Estimated Total:</span>
+                    <span className="font-bold text-orange-600 text-lg">
+                      ₹{(parseFloat(totalPrice) * numTravelers).toFixed(2)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 italic mt-2">
+                    * Final price will be calculated at checkout including hotel costs for {numNights} night{numNights > 1 ? 's' : ''} and {numRooms} room{numRooms > 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Customer Name */}
             <div>
@@ -261,6 +366,26 @@ export default function TravelerDetailsModal({
               <p className="text-xs text-gray-500 mt-1">
                 Include country code (e.g., +91 for India)
               </p>
+            </div>
+
+            {/* PHASE 1: Room Preferences */}
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <Hotel className="w-4 h-4" />
+                Room Preferences (Optional)
+              </label>
+              <textarea
+                {...register('room_preferences')}
+                placeholder="E.g., connecting rooms, ground floor, away from elevator..."
+                rows={2}
+                className={cn(
+                  "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none",
+                  errors.room_preferences ? "border-red-300" : "border-gray-300"
+                )}
+              />
+              {errors.room_preferences && (
+                <p className="text-xs text-red-600 mt-1">{errors.room_preferences.message}</p>
+              )}
             </div>
 
             {/* Special Requests */}

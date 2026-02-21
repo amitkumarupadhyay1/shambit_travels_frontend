@@ -134,7 +134,21 @@ export interface HotelTier {
   id: number;
   name: string;
   description: string;
+  // PHASE 1: New pricing fields
+  base_price_per_night: number | null;
+  weekend_multiplier: number;
+  max_occupancy_per_room: number;
+  room_types: {
+    single?: number;
+    double?: number;
+    family?: number;
+  };
+  amenities: string[];
+  // Legacy field (deprecated)
   price_multiplier: number;
+  // Computed fields
+  effective_price_per_night: number | null;
+  uses_new_pricing: boolean;
 }
 
 export interface TransportOption {
@@ -142,6 +156,52 @@ export interface TransportOption {
   name: string;
   description: string;
   base_price: number;
+}
+
+// Room Recommendation Types
+export interface RoomAllocation {
+  room_number: number;
+  room_type: string;
+  occupants: number[];
+  notes: string;
+}
+
+export interface RoomRecommendation {
+  num_rooms: number;
+  type: string;
+  priority: number;
+  rank: number;
+  reasoning: string;
+  description: string;
+  cost_per_night: string;
+  allocation: RoomAllocation[];
+  pros: string[];
+  cons: string[];
+  is_recommended: boolean;
+}
+
+export interface TravelerComposition {
+  total: number;
+  adults: number;
+  teens: number;
+  children: number;
+  males: number;
+  females: number;
+  unspecified_gender: number;
+  is_family: boolean;
+  is_mixed_gender: boolean;
+  has_children: boolean;
+}
+
+export interface RoomRecommendationResponse {
+  recommendations: RoomRecommendation[];
+  composition: TravelerComposition;
+  hotel_tier: {
+    id: number;
+    name: string;
+    max_occupancy_per_room: number;
+    base_price_per_night: string | null;
+  };
 }
 
 // Cache configuration
@@ -611,6 +671,10 @@ class ApiService {
       experience_ids: number[];
       hotel_tier_id: number;
       transport_option_id: number;
+      // PHASE 2: Optional date range and room count
+      start_date?: string;
+      end_date?: string;
+      num_rooms?: number;
     }
   ): Promise<PriceCalculation> {
     return this.fetchApi<PriceCalculation>(
@@ -649,6 +713,9 @@ class ApiService {
     transport_option_id: number;
     num_travelers: number;
     traveler_details?: Array<{ name: string; age: number; gender?: string }>;
+    booking_start_date?: string;
+    booking_end_date?: string;
+    num_rooms?: number;
   }): Promise<BookingPreview> {
     console.log('Previewing booking with data:', data);
     console.log('🔓 Preview endpoint is PUBLIC - no auth required');
@@ -661,6 +728,9 @@ class ApiService {
         transport_option_id: data.transport_option_id,
         num_travelers: data.num_travelers,
         traveler_details: data.traveler_details,
+        booking_start_date: data.booking_start_date,
+        booking_end_date: data.booking_end_date,
+        num_rooms: data.num_rooms,
       }),
       skipCache: true,
       skipAuth: true, // Public endpoint - no auth required
@@ -718,6 +788,24 @@ class ApiService {
     return this.fetchApi<{ message: string }>(`/bookings/${bookingId}/cancel/`, {
       method: 'POST',
       skipCache: true,
+    });
+  }
+
+  // Room Recommendations (public endpoint)
+  async getRoomRecommendations(data: {
+    hotel_tier_id: number;
+    traveler_details: Array<{
+      name: string;
+      age: number;
+      gender?: string;
+    }>;
+    preference?: 'auto' | 'budget' | 'comfort' | 'privacy' | 'family' | 'gender_separated';
+  }): Promise<RoomRecommendationResponse> {
+    return this.fetchApi<RoomRecommendationResponse>('/bookings/recommend_rooms/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      skipCache: true,
+      skipAuth: true, // Public endpoint
     });
   }
 
@@ -825,6 +913,7 @@ export interface PriceCalculation {
       id: number;
       name: string;
       price_multiplier: string;
+      base_price_per_night?: string | null;
     };
     transport: {
       id: number;
@@ -834,6 +923,13 @@ export interface PriceCalculation {
     // NEW: Detailed pricing breakdown including taxes
     subtotal_before_hotel?: string;
     subtotal_after_hotel?: string;
+    // PHASE 2: Hotel cost breakdown
+    hotel_cost?: string | null;
+    hotel_cost_per_night?: string | null;
+    hotel_num_nights?: number;
+    hotel_num_rooms?: number;
+    uses_new_hotel_pricing?: boolean;
+    // End PHASE 2
     applied_rules?: Array<{
       name: string;
       type: 'MARKUP' | 'DISCOUNT';
@@ -874,6 +970,13 @@ export interface PriceBreakdown {
     is_percentage: boolean;
     amount_applied: string;
   }>;
+  
+  // PHASE 1: New hotel pricing fields
+  hotel_cost?: string;
+  hotel_cost_per_night?: string;
+  hotel_num_nights?: number;
+  hotel_num_rooms?: number;
+  uses_new_hotel_pricing?: boolean;
   
   // Per-person and total (backend calculated)
   per_person_price: string;

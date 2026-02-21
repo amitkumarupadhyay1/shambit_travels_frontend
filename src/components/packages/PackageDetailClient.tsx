@@ -11,6 +11,11 @@ import TransportSelector from './TransportSelector';
 import PriceCalculator from './PriceCalculator';
 import TrustBadges from '../common/TrustBadges';
 import RecommendationsSection from './RecommendationsSection';
+import TripDurationCalculator from './TripDurationCalculator';
+import DateRangeSelector from './DateRangeSelector';
+import RoomCountSelector from './RoomCountSelector';
+import TravelerCountSelector from './TravelerCountSelector';
+import IntelligentRoomRecommendations from './IntelligentRoomRecommendations';
 
 import { useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -35,6 +40,26 @@ export default function PackageDetailClient({ packageData }: PackageDetailClient
     packageData.transport_options[0]?.id || null
   );
   const [allPackages, setAllPackages] = useState<Package[]>([]);
+  const [recommendedNights, setRecommendedNights] = useState(1);
+  
+  // PHASE 2: Date range and room count state
+  const [startDate, setStartDate] = useState<string | null>(null);
+  const [endDate, setEndDate] = useState<string | null>(null);
+  const [numNights, setNumNights] = useState(0);
+  const [numRooms, setNumRooms] = useState(1);
+  const [numTravelers, setNumTravelers] = useState(1);
+  
+  // PHASE 3: Room recommendation state
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [selectedRoomRecommendation, setSelectedRoomRecommendation] = useState<any>(null);
+  const [showRoomRecommendations, setShowRoomRecommendations] = useState(false);
+  
+  // Log selected recommendation for debugging (will be used in booking flow)
+  useEffect(() => {
+    if (selectedRoomRecommendation) {
+      console.log('Selected room recommendation:', selectedRoomRecommendation);
+    }
+  }, [selectedRoomRecommendation]);
 
   // Intent Detection: Redirect to Review Page
   useEffect(() => {
@@ -108,12 +133,29 @@ export default function PackageDetailClient({ packageData }: PackageDetailClient
     experiences: selectedExperiences,
     hotel: selectedHotel,
     transport: selectedTransport,
-  }), [selectedExperiences, selectedHotel, selectedTransport]);
+    // PHASE 2: Include date range and room count
+    startDate,
+    endDate,
+    numRooms,
+  }), [selectedExperiences, selectedHotel, selectedTransport, startDate, endDate, numRooms]);
 
   const isValidSelection =
     selectedExperiences.length > 0 &&
     selectedHotel !== null &&
-    selectedTransport !== null;
+    selectedTransport !== null &&
+    startDate !== null &&
+    endDate !== null &&
+    numNights > 0;
+
+  // Get selected experience objects for trip duration calculation
+  const selectedExperienceObjects = useMemo(() => {
+    return packageData.experiences.filter(exp => selectedExperiences.includes(exp.id));
+  }, [packageData.experiences, selectedExperiences]);
+
+  // Get selected hotel tier for max occupancy
+  const selectedHotelTier = useMemo(() => {
+    return packageData.hotel_tiers.find(tier => tier.id === selectedHotel);
+  }, [packageData.hotel_tiers, selectedHotel]);
 
   return (
     <div id="main-content" className={cn(sacredStyles.container, "py-8 md:py-12")}>
@@ -166,6 +208,65 @@ export default function PackageDetailClient({ packageData }: PackageDetailClient
             onChange={setSelectedExperiences}
           />
 
+          {/* Trip Duration Calculator - Phase 2 */}
+          {selectedExperienceObjects.length > 0 && (
+            <TripDurationCalculator
+              experiences={selectedExperienceObjects}
+              onDurationCalculated={(duration) => setRecommendedNights(duration.recommendedNights)}
+            />
+          )}
+
+          {/* Traveler Count Selector - PHASE 3 */}
+          <TravelerCountSelector
+            onCountChange={(count) => {
+              setNumTravelers(count);
+              // Show room recommendations when traveler count changes
+              if (count > 0 && selectedHotel) {
+                setShowRoomRecommendations(true);
+              }
+            }}
+            initialCount={numTravelers}
+            minCount={1}
+            maxCount={20}
+          />
+
+          {/* Date Range Selector - PHASE 2 */}
+          <DateRangeSelector
+            recommendedNights={recommendedNights}
+            onDatesChange={(start, end, nights) => {
+              setStartDate(start);
+              setEndDate(end);
+              setNumNights(nights);
+            }}
+          />
+
+          {/* Intelligent Room Recommendations - PHASE 3 */}
+          {showRoomRecommendations && numTravelers > 0 && selectedHotel && (
+            <IntelligentRoomRecommendations
+              hotelTierId={selectedHotel}
+              travelers={Array.from({ length: numTravelers }, (_, i) => ({
+                name: `Traveler ${i + 1}`,
+                age: 25, // Default age, will be updated in booking flow
+                gender: undefined,
+              }))}
+              onSelect={(recommendation) => {
+                setSelectedRoomRecommendation(recommendation);
+                setNumRooms(recommendation.num_rooms);
+              }}
+              selectedNumRooms={numRooms}
+            />
+          )}
+
+          {/* Room Count Selector - PHASE 2 (Manual Override) */}
+          {numTravelers > 0 && selectedHotelTier && !showRoomRecommendations && (
+            <RoomCountSelector
+              numTravelers={numTravelers}
+              maxOccupancyPerRoom={selectedHotelTier.max_occupancy_per_room}
+              onRoomCountChange={setNumRooms}
+              initialCount={numRooms}
+            />
+          )}
+
           {/* Hotel Tier Selection */}
           <HotelTierSelector
             hotelTiers={packageData.hotel_tiers}
@@ -188,6 +289,10 @@ export default function PackageDetailClient({ packageData }: PackageDetailClient
             packageData={packageData}
             selections={selections}
             isValid={isValidSelection}
+            selectedExperiences={selectedExperienceObjects}
+            hotelTierMaxOccupancy={selectedHotelTier?.max_occupancy_per_room || 2}
+            recommendedNights={recommendedNights}
+            numNights={numNights}
           />
         </aside>
       </div>

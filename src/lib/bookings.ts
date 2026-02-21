@@ -11,9 +11,20 @@ export interface BookingRequest {
   experience_ids: number[];
   hotel_tier_id: number;
   transport_option_id: number;
-  booking_date: string;
+  // PHASE 2: Updated date fields
+  booking_date: string; // Kept for backward compatibility (start date)
+  booking_end_date?: string; // PHASE 2: Trip end date
+  // PHASE 1: Room fields
+  num_rooms?: number; // PHASE 1: Number of rooms required (default: 1)
+  room_allocation?: Array<{
+    room_type: string;
+    occupants: number[];
+  }>; // PHASE 1: Room allocation details
+  room_preferences?: string; // PHASE 1: User's room preferences
+  // Traveler fields
   num_travelers: number;
   traveler_details?: TravelerDetail[];
+  // Customer fields
   customer_name: string;
   customer_email: string;
   customer_phone: string;

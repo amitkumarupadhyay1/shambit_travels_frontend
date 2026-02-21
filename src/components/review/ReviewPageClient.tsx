@@ -8,7 +8,6 @@ import { getSelections, clearSelections, validateSelections } from '@/lib/packag
 import { cn, sacredStyles, formatCurrency } from '@/lib/utils';
 import {
   Loader2,
-  Calendar,
   Users,
   Mail,
   Phone,
@@ -23,6 +22,9 @@ import {
 import toast from 'react-hot-toast';
 import TravelerCard from './TravelerCard';
 import TrustBadges from '../common/TrustBadges';
+import DateRangePicker from '../packages/DateRangePicker';
+import RoomSelector from '../packages/RoomSelector';
+import IntelligentRoomRecommendations from '../packages/IntelligentRoomRecommendations';
 
 interface TravellerInfo {
   name: string;
@@ -50,7 +52,11 @@ export default function ReviewPageClient({ packageData, slug }: ReviewPageClient
   const [travellers, setTravellers] = useState<TravellerInfo[]>([
     { name: '', age: '', gender: '' },
   ]);
-  const [bookingDate, setBookingDate] = useState('');
+  const [bookingStartDate, setBookingStartDate] = useState('');
+  const [bookingEndDate, setBookingEndDate] = useState('');
+  const [numNights, setNumNights] = useState(1); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [numRooms, setNumRooms] = useState(1);
+  const [roomAllocation, setRoomAllocation] = useState<Array<{ room_type: string; occupants: number[] }> | undefined>(undefined);
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
@@ -90,7 +96,10 @@ export default function ReviewPageClient({ packageData, slug }: ReviewPageClient
           return;
         }
 
-        setBookingDate(minBookingDate);
+        setBookingStartDate(minBookingDate);
+        const endDate = new Date(minBookingDate);
+        endDate.setDate(endDate.getDate() + 1);
+        setBookingEndDate(endDate.toISOString().split('T')[0]);
         setLoading(false);
       } catch (err) {
         console.error('Failed to load review data:', err);
@@ -131,6 +140,10 @@ export default function ReviewPageClient({ packageData, slug }: ReviewPageClient
           age: parseInt(t.age),
           gender: t.gender || '',
         })),
+        // PHASE 1: Include date range and room count
+        booking_start_date: bookingStartDate || undefined,
+        booking_end_date: bookingEndDate || undefined,
+        num_rooms: numRooms,
       });
 
       setPricePreview(preview);
@@ -141,7 +154,7 @@ export default function ReviewPageClient({ packageData, slug }: ReviewPageClient
     } finally {
       setPreviewLoading(false);
     }
-  }, [travellers, numTravelers]);
+  }, [travellers, numTravelers, bookingStartDate, bookingEndDate, numRooms]);
 
   // Debounced price preview
   useEffect(() => {
@@ -254,7 +267,10 @@ export default function ReviewPageClient({ packageData, slug }: ReviewPageClient
         experience_ids: selections.experienceIds,
         hotel_tier_id: selections.hotelTierId,
         transport_option_id: selections.transportOptionId,
-        booking_date: bookingDate,
+        booking_date: bookingStartDate,
+        booking_end_date: bookingEndDate,
+        num_rooms: numRooms,
+        room_allocation: roomAllocation,
         num_travelers: numTravelers,
         traveler_details: travellers.map((t) => ({
           name: t.name,
@@ -297,6 +313,23 @@ export default function ReviewPageClient({ packageData, slug }: ReviewPageClient
       setSubmitting(false);
     }
   };
+
+  // Get selected hotel tier for max occupancy
+  const selections = useMemo(() => getSelections(), []);
+  const selectedHotelTier = useMemo(() => {
+    if (!selections) return null;
+    return packageData.hotel_tiers.find(tier => tier.id === selections.hotelTierId);
+  }, [packageData.hotel_tiers, selections]);
+
+  const maxOccupancyPerRoom = selectedHotelTier?.max_occupancy_per_room || 2;
+
+  // Auto-calculate minimum rooms based on travelers
+  useEffect(() => {
+    const minRooms = Math.ceil(numTravelers / maxOccupancyPerRoom);
+    if (numRooms < minRooms) {
+      setNumRooms(minRooms);
+    }
+  }, [numTravelers, maxOccupancyPerRoom, numRooms]);
 
   if (loading) {
     return (
@@ -360,23 +393,19 @@ export default function ReviewPageClient({ packageData, slug }: ReviewPageClient
             </div>
           </div>
 
-          {/* Booking Date */}
-          <div className={sacredStyles.card}>
-            <h2 className={cn(sacredStyles.heading.h3, 'mb-4')}>Travel Date</h2>
-            <div className="flex items-center gap-3">
-              <Calendar className="w-5 h-5 text-orange-600" />
-              <input
-                type="date"
-                value={bookingDate}
-                onChange={(e) => setBookingDate(e.target.value)}
-                min={minBookingDate}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-              <Info className="w-3 h-3" />
-              Minimum 3 days advance booking required
-            </p>
+          {/* Booking Date Range - Phase 2 */}
+          <div>
+            <DateRangePicker
+              startDate={bookingStartDate}
+              endDate={bookingEndDate}
+              recommendedNights={1}
+              onChange={(start, end, nights) => {
+                setBookingStartDate(start);
+                setBookingEndDate(end);
+                setNumNights(nights);
+              }}
+              disabled={submitting}
+            />
           </div>
 
           {/* Traveler Details */}
@@ -428,6 +457,46 @@ export default function ReviewPageClient({ packageData, slug }: ReviewPageClient
                 Add Another Traveler
               </button>
             )}
+          </div>
+
+          {/* Intelligent Room Recommendations - Phase 3 */}
+          {travellers.length > 0 && travellers.every(t => t.name && t.age && t.gender) && selectedHotelTier && (
+            <div>
+              <IntelligentRoomRecommendations
+                hotelTierId={selectedHotelTier.id}
+                travelers={travellers.map(t => ({
+                  name: t.name,
+                  age: parseInt(t.age) || 0,
+                  gender: t.gender,
+                }))}
+                onSelect={(recommendation) => {
+                  setNumRooms(recommendation.num_rooms);
+                  setRoomAllocation(recommendation.allocation);
+                  toast.success(`Selected: ${recommendation.description}`);
+                }}
+                selectedNumRooms={numRooms}
+              />
+            </div>
+          )}
+
+          {/* Show message if travelers not complete */}
+          {travellers.length > 0 && !travellers.every(t => t.name && t.age && t.gender) && (
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                Complete all traveler details (name, age, gender) to see intelligent room recommendations
+              </p>
+            </div>
+          )}
+
+          {/* Room Selector - Phase 2 */}
+          <div>
+            <RoomSelector
+              numTravelers={numTravelers}
+              maxOccupancyPerRoom={maxOccupancyPerRoom}
+              selectedRooms={numRooms}
+              onChange={setNumRooms}
+              disabled={submitting}
+            />
           </div>
 
           {/* Contact Information */}
@@ -613,26 +682,55 @@ export default function ReviewPageClient({ packageData, slug }: ReviewPageClient
                     </div>
                   </div>
 
-                  {/* Hotel & Transport - ALL FROM BACKEND */}
+                  {/* Hotel & Transport - PHASE 1: Updated with actual hotel costs */}
                   <div className="pb-3 border-b border-gray-200">
                     <div className="flex justify-between text-sm mb-2">
                       <span className="text-gray-600">Transport: {pricePreview.price_breakdown.transport.name}</span>
                       <span className="font-medium">{formatCurrency(parseFloat(pricePreview.price_breakdown.transport.price))}</span>
                     </div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-700 font-medium">Subtotal before hotel</span>
-                      <span className="font-semibold">{formatCurrency(parseFloat(pricePreview.price_breakdown.subtotal_before_hotel))}</span>
-                    </div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-600">Hotel: {pricePreview.price_breakdown.hotel_tier.name}</span>
-                      <span className="font-medium text-blue-600">
-                        ×{pricePreview.price_breakdown.hotel_tier.multiplier}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm mt-2 pt-2 border-t border-gray-100">
-                      <span className="text-gray-700 font-medium">After Hotel Multiplier</span>
-                      <span className="font-semibold">{formatCurrency(parseFloat(pricePreview.price_breakdown.subtotal_after_hotel))}</span>
-                    </div>
+                    
+                    {/* PHASE 1: Show actual hotel costs if using new pricing */}
+                    {pricePreview.price_breakdown.uses_new_hotel_pricing && pricePreview.price_breakdown.hotel_cost ? (
+                      <>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-gray-700 font-medium">Subtotal before hotel</span>
+                          <span className="font-semibold">{formatCurrency(parseFloat(pricePreview.price_breakdown.subtotal_before_hotel))}</span>
+                        </div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-gray-600">
+                            Hotel: {pricePreview.price_breakdown.hotel_tier.name}
+                          </span>
+                          <span className="font-medium text-blue-600">
+                            {pricePreview.price_breakdown.hotel_num_rooms || 0} room{(pricePreview.price_breakdown.hotel_num_rooms || 0) > 1 ? 's' : ''} × {pricePreview.price_breakdown.hotel_num_nights || 0} night{(pricePreview.price_breakdown.hotel_num_nights || 0) > 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm mb-2 pl-4">
+                          <span className="text-gray-500 text-xs">Hotel cost per night:</span>
+                          <span className="text-xs">{formatCurrency(parseFloat(pricePreview.price_breakdown.hotel_cost_per_night || '0'))}</span>
+                        </div>
+                        <div className="flex justify-between text-sm mt-2 pt-2 border-t border-gray-100">
+                          <span className="text-gray-700 font-medium">Total Hotel Cost</span>
+                          <span className="font-semibold text-blue-600">{formatCurrency(parseFloat(pricePreview.price_breakdown.hotel_cost || '0'))}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-gray-700 font-medium">Subtotal before hotel</span>
+                          <span className="font-semibold">{formatCurrency(parseFloat(pricePreview.price_breakdown.subtotal_before_hotel))}</span>
+                        </div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-gray-600">Hotel: {pricePreview.price_breakdown.hotel_tier.name}</span>
+                          <span className="font-medium text-blue-600 text-xs">
+                            Based on dates & rooms
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm mt-2 pt-2 border-t border-gray-100">
+                          <span className="text-gray-700 font-medium">Subtotal</span>
+                          <span className="font-semibold">{formatCurrency(parseFloat(pricePreview.price_breakdown.subtotal_after_hotel))}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Applied Rules (Taxes, Discounts) - ALL FROM BACKEND */}
