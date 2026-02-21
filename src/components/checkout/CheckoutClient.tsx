@@ -117,6 +117,7 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
   }) => {
     console.log('Payment successful:', response.razorpay_payment_id);
     setShowPaymentModal(false);
+    setIsProcessing(true); // Show processing state
     
     // Verify payment with backend immediately
     toast.loading('Verifying payment...', { id: 'payment-verify' });
@@ -129,7 +130,7 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
       });
       
       if (verificationResult.success) {
-        toast.success('Payment confirmed!', { id: 'payment-verify' });
+        toast.success('Payment confirmed! Redirecting...', { id: 'payment-verify' });
         // Navigate to confirmation page
         router.push(`/bookings/${verificationResult.booking_reference || booking.id}`);
       } else {
@@ -143,6 +144,7 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
           ? err.message 
           : 'Payment verification failed. Your payment was successful but we could not confirm your booking. Please contact support with your payment ID: ' + response.razorpay_payment_id
       );
+      setIsProcessing(false);
     }
   };
 
@@ -593,6 +595,21 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
           onFailure={handlePaymentFailure}
           onClose={() => setShowPaymentModal(false)}
         />
+      )}
+
+      {/* Processing Overlay */}
+      {isProcessing && !showPaymentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+            <Loader2 className="w-16 h-16 text-orange-600 animate-spin mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Verifying Payment
+            </h3>
+            <p className="text-gray-600">
+              Please wait while we confirm your payment...
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -29,11 +29,29 @@ export default async function BookingConfirmationPage({ params }: BookingConfirm
 
   const { reference } = await params;
   
-  // Try to parse as booking ID (for backward compatibility)
-  const bookingId = parseInt(reference, 10);
+  // Extract booking ID from reference
+  // Supports both formats:
+  // - Booking reference: "SB-2026-000018" -> extract "18"
+  // - Direct booking ID: "18" -> use as is
+  let bookingId: number;
+  
+  if (reference.startsWith('SB-')) {
+    // Extract ID from booking reference format: SB-YYYY-NNNNNN
+    const parts = reference.split('-');
+    if (parts.length === 3) {
+      bookingId = parseInt(parts[2], 10);
+    } else {
+      notFound();
+      return;
+    }
+  } else {
+    // Direct booking ID
+    bookingId = parseInt(reference, 10);
+  }
 
   if (isNaN(bookingId)) {
     notFound();
+    return;
   }
 
   // Fetch booking details
@@ -43,6 +61,7 @@ export default async function BookingConfirmationPage({ params }: BookingConfirm
   } catch (error) {
     console.error('Failed to fetch booking:', error);
     notFound();
+    return;
   }
 
   // Check if booking belongs to current user
