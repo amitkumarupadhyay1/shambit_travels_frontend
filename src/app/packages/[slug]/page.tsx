@@ -4,6 +4,7 @@ import { apiService } from '@/lib/api';
 import PackageDetailClient from '@/components/packages/PackageDetailClient';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import { getPageWrapper, getPageContent } from '@/lib/spacing';
 
 interface PackageDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -35,10 +36,12 @@ export default async function PackageDetailPage({ params }: PackageDetailPagePro
   }
   
   return (
-    <main className="min-h-screen bg-gradient-to-b from-orange-50/30 to-white">
+    <div className={getPageWrapper()}>
       <Header />
-      <PackageDetailClient packageData={packageData} />
+      <main className={getPageContent({ className: 'bg-gradient-to-b from-orange-50/30 to-white' })}>
+        <PackageDetailClient packageData={packageData} />
+      </main>
       <Footer />
-    </main>
+    </div>
   );
 }

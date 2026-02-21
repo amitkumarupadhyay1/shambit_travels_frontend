@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { CheckCircle, Calendar, Users, Mail, Phone, Download, MapPin, Clock, AlertCircle, Package as PackageIcon } from 'lucide-react';
+import { CheckCircle, Calendar, Users, Mail, Phone, Download, MapPin, Clock, AlertCircle, Package as PackageIcon, Share2 } from 'lucide-react';
 import { cn, sacredStyles, formatCurrency } from '@/lib/utils';
 import { BookingDetail } from '@/lib/api';
 import BookingTimeline from './BookingTimeline';
+import toast from 'react-hot-toast';
 
 interface BookingConfirmationClientProps {
   booking: BookingDetail;
@@ -18,6 +19,32 @@ export default function BookingConfirmationClient({ booking }: BookingConfirmati
   const breakdown = booking.price_breakdown;
   const totalAmount = parseFloat(breakdown.total_amount);
   const perPersonPrice = parseFloat(breakdown.per_person_price);
+
+  // WhatsApp share handler
+  const handleWhatsAppShare = () => {
+    const message = `🕉️ *ShamBit Travel Booking Confirmed!*
+
+📦 *Package:* ${booking.package.name}
+📍 *Destination:* ${booking.package.city_name}
+📅 *Travel Date:* ${new Date(booking.booking_date).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    })}
+👥 *Travelers:* ${booking.num_travelers}
+💰 *Amount:* ${formatCurrency(totalAmount)}
+
+🎫 *Booking Reference:* ${booking.booking_reference || `#${booking.id}`}
+
+✨ A Bit of Goodness in Every Deal
+🌐 Visit: shambit.com`;
+
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+    
+    window.open(whatsappUrl, '_blank');
+    toast.success('Opening WhatsApp...');
+  };
   
   return (
     <div className={cn(sacredStyles.container, "max-w-4xl")}>
@@ -282,6 +309,13 @@ export default function BookingConfirmationClient({ booking }: BookingConfirmati
         >
           View All Bookings
         </Link>
+        <button
+          onClick={handleWhatsAppShare}
+          className="flex-1 bg-green-600 text-white font-medium px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+        >
+          <Share2 className="w-5 h-5" />
+          Share on WhatsApp
+        </button>
         <Link
           href="/packages"
           className={cn(sacredStyles.button.primary, "flex-1 text-center")}

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Facebook, Instagram, MessageCircle, Mail, Phone, MapPin, Heart } from 'lucide-react';
+import { Facebook, Instagram, MessageCircle, Mail, Phone, MapPin, Heart, Lock, Shield } from 'lucide-react';
 import { cn, sacredStyles } from '@/lib/utils';
 
 const Footer = () => {
@@ -141,8 +141,50 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Legal Links Section */}
+        {/* Trust & Security Badges Section */}
         <div className="border-t border-gray-700 mt-12 pt-8">
+          <div className="flex flex-wrap items-center justify-center gap-6 mb-8">
+            {/* SSL Badge */}
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg border border-green-500/30">
+              <Lock className="w-5 h-5 text-green-400" aria-hidden="true" />
+              <div className="text-left">
+                <p className="text-xs font-semibold text-green-400">SSL Secured</p>
+                <p className="text-xs text-gray-400">HTTPS Encrypted</p>
+              </div>
+            </div>
+
+            {/* Secure Payment Badge */}
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg border border-blue-500/30">
+              <Shield className="w-5 h-5 text-blue-400" aria-hidden="true" />
+              <div className="text-left">
+                <p className="text-xs font-semibold text-blue-400">Secure Payment</p>
+                <p className="text-xs text-gray-400">PCI DSS Compliant</p>
+              </div>
+            </div>
+
+            {/* Payment Methods */}
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg border border-orange-500/30">
+              <div className="flex gap-1">
+                <span className="text-lg">💳</span>
+                <span className="text-lg">📱</span>
+              </div>
+              <div className="text-left">
+                <p className="text-xs font-semibold text-orange-400">All Payment Methods</p>
+                <p className="text-xs text-gray-400">Visa, UPI, NetBanking</p>
+              </div>
+            </div>
+
+            {/* Trusted Badge */}
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg border border-yellow-500/30">
+              <span className="text-2xl">⭐</span>
+              <div className="text-left">
+                <p className="text-xs font-semibold text-yellow-400">Trusted by 10,000+</p>
+                <p className="text-xs text-gray-400">Happy Travelers</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Legal Links */}
           <div className="flex flex-wrap justify-center gap-6 mb-6">
             {legalLinks.map((link) => (
               <Link

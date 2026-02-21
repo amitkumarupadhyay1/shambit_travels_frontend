@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
-import { Loader2, Calendar, Search, Package as PackageIcon, Clock, Download } from "lucide-react"
+import { Loader2, Calendar, Package as PackageIcon, Clock, Download } from "lucide-react"
 import Link from "next/link"
 import { apiService, BookingDetail } from "@/lib/api"
 import { formatCurrency } from "@/lib/utils"
 import toast from 'react-hot-toast'
+import { EmptyState } from "@/components/common/EmptyState"
+import VoucherPreview from "@/components/bookings/VoucherPreview"
 
 export default function BookingsPage() {
     const { status } = useSession()
@@ -14,6 +16,8 @@ export default function BookingsPage() {
     const [loading, setLoading] = useState(true)
     const [filter, setFilter] = useState<'all' | 'upcoming' | 'past' | 'cancelled'>('all')
     const [downloadingId, setDownloadingId] = useState<number | null>(null)
+    const [showVoucherPreview, setShowVoucherPreview] = useState(false)
+    const [selectedBooking, setSelectedBooking] = useState<BookingDetail | null>(null)
 
     useEffect(() => {
         const fetchBookings = async () => {
@@ -157,28 +161,17 @@ export default function BookingsPage() {
             </div>
 
             {filteredBookings.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Calendar className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-900">
-                        {filter === 'all' ? 'No bookings yet' : `No ${filter} bookings`}
-                    </h3>
-                    <p className="text-gray-500 mt-2 mb-6">
-                        {filter === 'all' 
-                            ? "You haven't made any bookings yet. Start your journey today!"
-                            : `You don't have any ${filter} bookings.`
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+                    <EmptyState
+                        variant="no-bookings"
+                        title={filter === 'all' ? 'No bookings yet' : `No ${filter} bookings`}
+                        description={
+                            filter === 'all'
+                                ? "You haven't made any bookings yet. Start your spiritual journey today!"
+                                : `You don't have any ${filter} bookings.`
                         }
-                    </p>
-                    {filter === 'all' && (
-                        <Link
-                            href="/packages"
-                            className="px-6 py-2.5 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition-all inline-flex items-center"
-                        >
-                            <Search className="w-4 h-4 mr-2" />
-                            Explore Packages
-                        </Link>
-                    )}
+                        action={filter === 'all' ? { label: 'Explore Packages', href: '/packages' } : undefined}
+                    />
                 </div>
             ) : (
                 <div className="grid grid-cols-1 gap-6">
@@ -252,29 +245,69 @@ export default function BookingsPage() {
                                         View Details
                                     </Link>
                                     {booking.status === 'CONFIRMED' && (
-                                        <button
-                                            className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                            onClick={() => handleDownloadVoucher(booking.id, booking.booking_reference)}
-                                            disabled={downloadingId === booking.id}
-                                        >
-                                            {downloadingId === booking.id ? (
-                                                <>
-                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                    Downloading...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Download className="w-4 h-4" />
-                                                    Download Voucher
-                                                </>
-                                            )}
-                                        </button>
+                                        <>
+                                            <button
+                                                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                                                onClick={() => {
+                                                    setSelectedBooking(booking)
+                                                    setShowVoucherPreview(true)
+                                                }}
+                                            >
+                                                View Voucher
+                                            </button>
+                                            <button
+                                                className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                onClick={() => handleDownloadVoucher(booking.id, booking.booking_reference)}
+                                                disabled={downloadingId === booking.id}
+                                            >
+                                                {downloadingId === booking.id ? (
+                                                    <>
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                        Downloading...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Download className="w-4 h-4" />
+                                                        Download PDF
+                                                    </>
+                                                )}
+                                            </button>
+                                        </>
                                     )}
                                 </div>
                             </div>
                         </div>
                     ))}
                 </div>
+            )}
+
+            {/* Voucher Preview Modal */}
+            {selectedBooking && (
+                <VoucherPreview
+                    booking={selectedBooking}
+                    isOpen={showVoucherPreview}
+                    onClose={() => {
+                        setShowVoucherPreview(false)
+                        setSelectedBooking(null)
+                    }}
+                    onDownload={async () => {
+                        try {
+                            const blob = await apiService.downloadVoucher(selectedBooking.id)
+                            const url = window.URL.createObjectURL(blob)
+                            const link = document.createElement('a')
+                            link.href = url
+                            link.download = `ShamBit-Voucher-${selectedBooking.booking_reference || selectedBooking.id}.pdf`
+                            document.body.appendChild(link)
+                            link.click()
+                            document.body.removeChild(link)
+                            window.URL.revokeObjectURL(url)
+                            toast.success('Voucher downloaded successfully!')
+                        } catch (error) {
+                            console.error('Download failed:', error)
+                            toast.error('Failed to download voucher. Please try again.')
+                        }
+                    }}
+                />
             )}
         </div>
     )

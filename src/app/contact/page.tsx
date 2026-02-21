@@ -3,6 +3,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ContactForm from '@/components/contact/ContactForm';
 import { cn, sacredStyles } from '@/lib/utils';
+import { getPageWrapper, getPageContent, getSection } from '@/lib/spacing';
 import { Mail, Phone, MapPin, Clock, MessageCircle } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -13,10 +14,10 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-orange-50/30 to-white">
+    <div className={getPageWrapper()}>
       <Header />
-      <div className="pt-28 sm:pt-32 lg:pt-32">
-        <div className={cn(sacredStyles.container, 'py-8 md:py-12')}>
+      <main className={getPageContent({ className: 'bg-gradient-to-b from-orange-50/30 to-white' })}>
+        <div className={getSection({ spacing: 'large', padding: true })}>
           {/* Header */}
           <div className="max-w-4xl mx-auto text-center mb-16">
             <h1 className={cn(sacredStyles.heading.h1, 'mb-6')}>
@@ -116,9 +117,9 @@ export default function ContactPage() {
             </div>
           </div>
         </div>
-      </div>
+      </main>
       <Footer />
-    </main>
+    </div>
   );
 }
 

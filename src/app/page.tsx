@@ -85,7 +85,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen relative bg-white">
+    <main className="min-h-screen relative bg-white page-container">
       <Header />
 
       {/* Hero Section with City Selector */}

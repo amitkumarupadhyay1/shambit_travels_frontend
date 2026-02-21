@@ -3,7 +3,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ComingSoon from '@/components/common/ComingSoon';
 import { Hotel } from 'lucide-react';
-import { sacredStyles } from '@/lib/utils';
+import { getPageWrapper, getPageContent, getSection } from '@/lib/spacing';
 
 export const metadata: Metadata = {
   title: 'Hotel Booking - Coming Soon | ShamBit',
@@ -12,10 +12,10 @@ export const metadata: Metadata = {
 
 export default function HotelsBookingPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-orange-50/30 to-white">
+    <div className={getPageWrapper()}>
       <Header />
-      <div className="pt-[120px] md:pt-[140px]">
-        <div className={sacredStyles.container}>
+      <main className={getPageContent({ className: 'bg-gradient-to-b from-orange-50/30 to-white' })}>
+        <div className={getSection({ spacing: 'large', padding: true })}>
           <ComingSoon
             icon={<Hotel className="w-12 h-12 text-white" />}
             title="Hotel Booking Coming Soon"
@@ -28,8 +28,8 @@ export default function HotelsBookingPage() {
             ]}
           />
         </div>
-      </div>
+      </main>
       <Footer />
-    </main>
+    </div>
   );
 }

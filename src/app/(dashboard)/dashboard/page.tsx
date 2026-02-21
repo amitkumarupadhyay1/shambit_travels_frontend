@@ -2,13 +2,16 @@
 
 import { useSession } from "next-auth/react"
 import Link from "next/link"
-import { Calendar, MapPin, CheckCircle2, ArrowRight, FileText, Compass, Package, Clock } from "lucide-react"
+import { Calendar, MapPin, CheckCircle2, FileText, Compass, Package, Clock, Share2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { apiService, BookingDetail } from "@/lib/api"
 import { formatCurrency } from "@/lib/utils"
 import { motion } from "framer-motion"
-import { staggerContainer, staggerItem, cardHover } from "@/lib/animations"
+import { staggerContainer, staggerItem } from "@/lib/animations"
 import { SkeletonHero, SkeletonStat, SkeletonCard } from "@/components/common/SkeletonCard"
+import { EmptyState, ErrorState } from "@/components/common/EmptyState"
+import VoucherPreview from "@/components/bookings/VoucherPreview"
+import toast from "react-hot-toast"
 
 export default function DashboardPage() {
     const { data: session, status } = useSession()
@@ -23,6 +26,8 @@ export default function DashboardPage() {
         upcomingTrips: 0,
         completedTrips: 0
     })
+    const [showVoucherPreview, setShowVoucherPreview] = useState(false)
+    const [selectedBooking, setSelectedBooking] = useState<BookingDetail | null>(null)
 
     // Fetch real dashboard data
     useEffect(() => {
@@ -91,6 +96,32 @@ export default function DashboardPage() {
         return 'Traveler';
     };
 
+    // WhatsApp share handler
+    const handleWhatsAppShare = (booking: BookingDetail) => {
+        const message = `🕉️ *ShamBit Travel Booking Confirmed!*
+
+📦 *Package:* ${booking.package.name}
+📍 *Destination:* ${booking.package.city_name}
+📅 *Travel Date:* ${new Date(booking.booking_date).toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        })}
+👥 *Travelers:* ${booking.num_travelers}
+💰 *Amount:* ${formatCurrency(parseFloat(booking.total_price) * booking.num_travelers)}
+
+🎫 *Booking Reference:* ${booking.booking_reference || booking.id}
+
+✨ A Bit of Goodness in Every Deal
+🌐 Visit: shambit.com`;
+
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+        
+        window.open(whatsappUrl, '_blank');
+        toast.success('Opening WhatsApp...');
+    };
+
     // Loading state
     if (loading) {
         return (
@@ -131,15 +162,10 @@ export default function DashboardPage() {
                     </h1>
                     <p className="text-sm text-gray-500 mt-1">A Bit of Goodness in Every Deal</p>
                 </div>
-                <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-                    <p className="text-red-800">{error}</p>
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                    >
-                        Retry
-                    </button>
-                </div>
+                <ErrorState
+                    message={error}
+                    onRetry={() => window.location.reload()}
+                />
             </div>
         )
     }
@@ -164,9 +190,7 @@ export default function DashboardPage() {
             {upcomingBooking ? (
                 <motion.div 
                     className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 border border-orange-100 shadow-sm"
-                    variants={cardHover}
-                    initial="rest"
-                    whileHover="hover"
+                    whileHover={{ y: -4, boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}
                     transition={{ duration: 0.2 }}
                 >
                     <div className="flex items-start justify-between mb-4">
@@ -212,52 +236,39 @@ export default function DashboardPage() {
                             View Details
                         </Link>
                         <button 
-                            className="flex-1 bg-gradient-to-r from-orange-600 to-amber-600 text-white font-medium px-4 py-2.5 rounded-lg hover:shadow-lg transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                            onClick={async () => {
-                                try {
-                                    const blob = await apiService.downloadVoucher(upcomingBooking.id);
-                                    const url = window.URL.createObjectURL(blob);
-                                    const link = document.createElement('a');
-                                    link.href = url;
-                                    link.download = `ShamBit-Voucher-${upcomingBooking.booking_reference || upcomingBooking.id}.pdf`;
-                                    document.body.appendChild(link);
-                                    link.click();
-                                    document.body.removeChild(link);
-                                    window.URL.revokeObjectURL(url);
-                                } catch (error) {
-                                    console.error('Download failed:', error);
-                                    alert('Download voucher feature is not yet available. Please contact support.');
-                                }
+                            className="flex-1 bg-gradient-to-r from-orange-600 to-amber-600 text-white font-medium px-4 py-2.5 rounded-lg hover:shadow-lg transition-all text-sm"
+                            onClick={() => {
+                                setSelectedBooking(upcomingBooking)
+                                setShowVoucherPreview(true)
                             }}
                         >
-                            Download Voucher
+                            View Voucher
+                        </button>
+                        <button
+                            onClick={() => handleWhatsAppShare(upcomingBooking)}
+                            className="bg-green-600 text-white font-medium px-4 py-2.5 rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center justify-center gap-2"
+                            title="Share on WhatsApp"
+                        >
+                            <Share2 className="w-4 h-4" />
+                            <span className="hidden sm:inline">Share</span>
                         </button>
                     </div>
                 </motion.div>
             ) : (
                 <motion.div 
-                    className="bg-white rounded-2xl p-8 border border-gray-200 text-center"
-                    variants={cardHover}
-                    initial="rest"
-                    whileHover="hover"
+                    className="bg-white rounded-2xl p-8 border border-gray-200"
+                    whileHover={{ y: -4, boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}
                     transition={{ duration: 0.2 }}
                 >
-                    <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Compass className="w-8 h-8 text-orange-600" />
-                    </div>
-                    <h3 className="text-xl font-playfair font-semibold text-gray-900 mb-2">
-                        Start Your First Journey
-                    </h3>
-                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                        Discover spiritual destinations and book your perfect travel experience with us.
-                    </p>
-                    <Link
-                        href="/packages"
-                        className="inline-flex items-center bg-gradient-to-r from-orange-600 to-amber-600 text-white font-medium px-6 py-3 rounded-lg hover:shadow-lg transition-all"
-                    >
-                        Explore Packages
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                    </Link>
+                    <EmptyState
+                        variant="no-bookings"
+                        title="Start Your First Journey"
+                        description="Discover spiritual destinations and book your perfect travel experience with us."
+                        action={{
+                            label: 'Explore Packages',
+                            href: '/packages',
+                        }}
+                    />
                 </motion.div>
             )}
             </motion.div>
@@ -391,6 +402,35 @@ export default function DashboardPage() {
                     </div>
                 )}
             </motion.div>
+
+            {/* Voucher Preview Modal */}
+            {selectedBooking && (
+                <VoucherPreview
+                    booking={selectedBooking}
+                    isOpen={showVoucherPreview}
+                    onClose={() => {
+                        setShowVoucherPreview(false)
+                        setSelectedBooking(null)
+                    }}
+                    onDownload={async () => {
+                        try {
+                            const blob = await apiService.downloadVoucher(selectedBooking.id)
+                            const url = window.URL.createObjectURL(blob)
+                            const link = document.createElement('a')
+                            link.href = url
+                            link.download = `ShamBit-Voucher-${selectedBooking.booking_reference || selectedBooking.id}.pdf`
+                            document.body.appendChild(link)
+                            link.click()
+                            document.body.removeChild(link)
+                            window.URL.revokeObjectURL(url)
+                            toast.success('Voucher downloaded successfully!')
+                        } catch (error) {
+                            console.error('Download failed:', error)
+                            toast.error('Failed to download voucher. Please try again.')
+                        }
+                    }}
+                />
+            )}
         </motion.div>
     )
 }

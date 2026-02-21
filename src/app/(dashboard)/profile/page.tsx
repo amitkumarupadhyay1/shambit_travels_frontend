@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import axios from "axios"
 import { Loader2, Save, User, Phone, Mail } from "lucide-react"
+import PasswordChangeForm from "@/components/profile/PasswordChangeForm"
 
 const profileSchema = z.object({
     first_name: z.string().min(2, "First name is required"),
@@ -82,11 +83,12 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="max-w-2xl bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-            <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
-                <p className="text-gray-500 mt-1">Manage your personal information</p>
-            </div>
+        <div className="space-y-8">
+            <div className="max-w-2xl bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+                <div className="mb-8">
+                    <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
+                    <p className="text-gray-500 mt-1">Manage your personal information</p>
+                </div>
 
             {success && (
                 <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-lg border border-green-100 flex items-center">
@@ -164,6 +166,9 @@ export default function ProfilePage() {
                     </button>
                 </div>
             </form>
+        </div>
+
+        <PasswordChangeForm />
         </div>
     )
 }

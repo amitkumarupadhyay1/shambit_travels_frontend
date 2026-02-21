@@ -116,7 +116,7 @@ export default function PackageDetailClient({ packageData }: PackageDetailClient
     selectedTransport !== null;
 
   return (
-    <div id="main-content" className={cn(sacredStyles.container, sacredStyles.spacing.page.both)}>
+    <div id="main-content" className={cn(sacredStyles.container, "py-8 md:py-12")}>
       {/* Package Header */}
       <header className="mb-8 md:mb-12">
         <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">

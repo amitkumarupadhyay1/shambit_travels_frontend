@@ -5,6 +5,19 @@
   /* Premium Off-White / Sacred Cream */
   --foreground: #1A1A1A;
   /* Deep Charcoal for good contrast */
+  
+  /* Spacing Constants */
+  --header-height: 80px;
+  --header-height-mobile: 70px;
+  --topbar-height: 40px;
+  --footer-margin-top: 80px;
+  --footer-margin-top-mobile: 60px;
+  --page-padding-top: 80px;
+  --page-padding-top-mobile: 70px;
+  --section-spacing: 80px;
+  --section-spacing-mobile: 60px;
+  --container-padding: 24px;
+  --container-padding-mobile: 16px;
 }
 
 @theme {
@@ -53,6 +66,22 @@
     opacity: 0.8;
     transform: scale(1.05);
   }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.animate-ripple {
+  animation: ripple 0.6s ease-out;
 }
 
 body {
@@ -125,4 +154,275 @@ body {
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #FF9933 #f1f1f1;
+}
+
+/* ============================================
+   SPACING STANDARDIZATION
+   ============================================ */
+
+/* Page Layout Classes */
+.page-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-content {
+  flex: 1;
+  padding-top: var(--page-padding-top);
+}
+
+@media (max-width: 768px) {
+  .page-content {
+    padding-top: var(--page-padding-top-mobile);
+  }
+}
+
+/* Section Spacing */
+.section-spacing {
+  margin-top: var(--section-spacing);
+  margin-bottom: var(--section-spacing);
+}
+
+@media (max-width: 768px) {
+  .section-spacing {
+    margin-top: var(--section-spacing-mobile);
+    margin-bottom: var(--section-spacing-mobile);
+  }
+}
+
+.section-spacing-top {
+  margin-top: var(--section-spacing);
+}
+
+@media (max-width: 768px) {
+  .section-spacing-top {
+    margin-top: var(--section-spacing-mobile);
+  }
+}
+
+.section-spacing-bottom {
+  margin-bottom: var(--section-spacing);
+}
+
+@media (max-width: 768px) {
+  .section-spacing-bottom {
+    margin-bottom: var(--section-spacing-mobile);
+  }
+}
+
+/* Footer Spacing */
+.footer-spacing {
+  margin-top: var(--footer-margin-top);
+}
+
+@media (max-width: 768px) {
+  .footer-spacing {
+    margin-top: var(--footer-margin-top-mobile);
+  }
+}
+
+/* Header Offset (for fixed headers) */
+.header-offset {
+  padding-top: calc(var(--topbar-height) + var(--header-height));
+}
+
+@media (max-width: 768px) {
+  .header-offset {
+    padding-top: calc(var(--topbar-height) + var(--header-height-mobile));
+  }
+}
+
+/* Container Padding */
+.container-padding {
+  padding-left: var(--container-padding);
+  padding-right: var(--container-padding);
+}
+
+@media (max-width: 768px) {
+  .container-padding {
+    padding-left: var(--container-padding-mobile);
+    padding-right: var(--container-padding-mobile);
+  }
+}
+
+/* Utility Classes for Quick Spacing */
+.spacing-80 {
+  margin-top: 80px;
+  margin-bottom: 80px;
+}
+
+@media (max-width: 768px) {
+  .spacing-80 {
+    margin-top: 60px;
+    margin-bottom: 60px;
+  }
+}
+
+.spacing-top-80 {
+  margin-top: 80px;
+}
+
+@media (max-width: 768px) {
+  .spacing-top-80 {
+    margin-top: 60px;
+  }
+}
+
+.spacing-bottom-80 {
+  margin-bottom: 80px;
+}
+
+@media (max-width: 768px) {
+  .spacing-bottom-80 {
+    margin-bottom: 60px;
+  }
+}
+
+/* Content Width Constraints */
+.content-max-width {
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.content-narrow {
+  max-width: 768px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.content-wide {
+  max-width: 1536px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ============================================
+   PRINT STYLES FOR VOUCHER
+   ============================================ */
+
+@media print {
+  /* Hide everything except voucher content */
+  body * {
+    visibility: hidden;
+  }
+
+  .voucher-content,
+  .voucher-content * {
+    visibility: visible;
+  }
+
+  .voucher-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 20mm;
+  }
+
+  /* Remove backgrounds for better printing */
+  * {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Preserve specific colors for branding */
+  .text-orange-600,
+  .bg-orange-600 {
+    color: #ea580c !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .text-green-600 {
+    color: #16a34a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Table styling for print */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    page-break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+
+  th,
+  td {
+    border: 1px solid #000 !important;
+    padding: 8px !important;
+  }
+
+  th {
+    background-color: #f3f4f6 !important;
+    font-weight: bold;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Preserve table header colors */
+  thead tr {
+    background-color: #ea580c !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  thead th {
+    background-color: #ea580c !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Preserve alternating row colors */
+  tbody tr:nth-child(even) {
+    background-color: #fff7ed !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* QR Code styling */
+  svg {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Page breaks */
+  h1,
+  h2,
+  h3 {
+    page-break-after: avoid;
+  }
+
+  /* Remove shadows and rounded corners */
+  * {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Ensure proper spacing */
+  .voucher-content > div {
+    margin-bottom: 16px;
+  }
+
+  /* Hide print button and modal controls */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Ensure full width for print */
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
 }

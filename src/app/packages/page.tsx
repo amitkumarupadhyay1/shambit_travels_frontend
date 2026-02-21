@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import PackagesListingClient from '@/components/packages/PackagesListingClient';
+import { getPageWrapper, getPageContent } from '@/lib/spacing';
 
 export const metadata: Metadata = {
   title: 'Travel Packages - ShamBit',
@@ -10,12 +11,12 @@ export const metadata: Metadata = {
 
 export default function PackagesPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-orange-50/30 to-white">
+    <div className={getPageWrapper()}>
       <Header />
-      <div className="pt-28 sm:pt-32 lg:pt-32">
+      <main className={getPageContent({ className: 'bg-gradient-to-b from-orange-50/30 to-white' })}>
         <PackagesListingClient />
-      </div>
+      </main>
       <Footer />
-    </main>
+    </div>
   );
 }

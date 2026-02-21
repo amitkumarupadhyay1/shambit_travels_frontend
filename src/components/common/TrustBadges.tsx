@@ -1,11 +1,12 @@
-import { Shield, Clock, Award, HeadphonesIcon, CheckCircle, Star } from 'lucide-react';
+import { Shield, Clock, Award, HeadphonesIcon, CheckCircle, Star, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TrustBadgesProps {
-  variant?: 'default' | 'compact';
+  variant?: 'default' | 'compact' | 'minimal';
+  showPaymentIcons?: boolean;
 }
 
-export default function TrustBadges({ variant = 'default' }: TrustBadgesProps) {
+export default function TrustBadges({ variant = 'default', showPaymentIcons = false }: TrustBadgesProps) {
   const badges = [
     {
       icon: Shield,
@@ -38,6 +39,38 @@ export default function TrustBadges({ variant = 'default' }: TrustBadgesProps) {
       description: '10,000+ happy travelers',
     },
   ];
+
+  if (variant === 'minimal') {
+    return (
+      <div className="flex flex-wrap items-center justify-center gap-4 py-4">
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <Lock className="w-4 h-4 text-green-600" aria-hidden="true" />
+          <span>SSL Secured</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <Shield className="w-4 h-4 text-green-600" aria-hidden="true" />
+          <span>100% Secure</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <CheckCircle className="w-4 h-4 text-green-600" aria-hidden="true" />
+          <span>Trusted by 10,000+</span>
+        </div>
+        {showPaymentIcons && (
+          <>
+            <span className="text-gray-400">|</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">We accept:</span>
+              <div className="flex gap-1">
+                <span className="text-lg">💳</span>
+                <span className="text-lg">📱</span>
+                <span className="text-lg">🏦</span>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
 
   if (variant === 'compact') {
     return (

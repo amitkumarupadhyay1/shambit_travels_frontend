@@ -11,7 +11,7 @@ import ExperienceFilters from './ExperienceFilters';
 import ExperienceSort, { SortOption } from './ExperienceSort';
 import { SkeletonGrid } from '../common/SkeletonCard';
 import { Badge, getExperienceBadge } from '../common/Badge';
-import { EmptyState } from '../common/EmptyState';
+import { NoSearchResultsState, ErrorState } from '../common/EmptyState';
 import Header from '../layout/Header';
 import Footer from '../layout/Footer';
 
@@ -180,7 +180,7 @@ export default function ExperiencesListingClient() {
   return (
     <>
       <Header />
-      <div className={cn(sacredStyles.container, 'pt-32 pb-24 md:pt-40 md:pb-32')}>
+      <div className={cn(sacredStyles.container, 'pt-24 pb-24 md:pt-28 md:pb-32')}>
         {/* Header */}
         <div className="mb-12">
           <h1 className={cn(sacredStyles.heading.h1, 'mb-4')}>
@@ -249,36 +249,11 @@ export default function ExperiencesListingClient() {
 
             {/* Error State */}
             {!loading && error && (
-              <div className="text-center py-20">
-                <div className={cn(sacredStyles.card, 'max-w-md mx-auto')}>
-                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg
-                      className="w-8 h-8 text-red-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </div>
-                  <h3 className={cn(sacredStyles.heading.h4, 'mb-3')}>
-                    Unable to Load Experiences
-                  </h3>
-                  <p className={cn(sacredStyles.text.body, 'mb-6 text-gray-600')}>
-                    {error}
-                  </p>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className={sacredStyles.button.primary}
-                  >
-                    Try Again
-                  </button>
-                </div>
+              <div className="py-20">
+                <ErrorState
+                  message={error}
+                  onRetry={() => window.location.reload()}
+                />
               </div>
             )}
 
@@ -303,18 +278,9 @@ export default function ExperiencesListingClient() {
 
             {/* Empty State */}
             {!loading && !error && filteredAndSortedExperiences.length === 0 && (
-              <EmptyState
-                icon={<Search className="w-10 h-10" />}
-                title="No experiences found"
-                description="We couldn't find any experiences matching your criteria. Try adjusting your filters or search terms."
-                action={
-                  activeFilterCount > 0
-                    ? {
-                      label: 'Clear All Filters',
-                      onClick: handleClearAllFilters,
-                    }
-                    : undefined
-                }
+              <NoSearchResultsState
+                query={searchQuery}
+                onReset={activeFilterCount > 0 ? handleClearAllFilters : undefined}
               />
             )}
           </div>

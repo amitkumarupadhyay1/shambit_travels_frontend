@@ -7,7 +7,7 @@ import { Loader2, Calendar, User, MapPin, Search, X, BookOpen } from 'lucide-rea
 import Link from 'next/link';
 import Header from '../layout/Header';
 import Footer from '../layout/Footer';
-import { EmptyState } from '../common/EmptyState';
+import { NoSearchResultsState, ErrorState } from '../common/EmptyState';
 import FilterSidebar, { FilterSection } from '../common/FilterSidebar';
 import Image from 'next/image';
 
@@ -211,32 +211,11 @@ export default function ArticlesListingClient() {
 
             {/* Error State */}
             {!loading && error && (
-              <div className="text-center py-20">
-                <div className={cn(sacredStyles.card, 'max-w-md mx-auto')}>
-                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg
-                      className="w-8 h-8 text-red-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </div>
-                  <h3 className={cn(sacredStyles.heading.h4, 'mb-3')}>Unable to Load Articles</h3>
-                  <p className={cn(sacredStyles.text.body, 'mb-6 text-gray-600')}>{error}</p>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className={sacredStyles.button.primary}
-                  >
-                    Try Again
-                  </button>
-                </div>
+              <div className="py-20">
+                <ErrorState
+                  message={error}
+                  onRetry={() => window.location.reload()}
+                />
               </div>
             )}
 
@@ -251,14 +230,9 @@ export default function ArticlesListingClient() {
 
             {/* Empty State */}
             {!loading && !error && filteredAndSortedArticles.length === 0 && (
-              <EmptyState
-                icon={<Search className="w-10 h-10" />}
-                title="No articles found"
-                description="We couldn't find any articles matching your criteria. Try adjusting your filters."
-                action={{
-                  label: 'Clear Filters',
-                  onClick: handleClearFilters,
-                }}
+              <NoSearchResultsState
+                query={searchQuery}
+                onReset={handleClearFilters}
               />
             )}
 

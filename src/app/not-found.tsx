@@ -5,6 +5,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { cn, sacredStyles } from '@/lib/utils';
 import { Home, Search, MapPin, Package, BookOpen } from 'lucide-react';
+import { NotFoundIllustration } from '@/components/common/EmptyStateIllustrations';
 
 export default function NotFound() {
   return (
@@ -13,14 +14,9 @@ export default function NotFound() {
       <div className="pt-[120px] md:pt-[140px]">
         <div className={cn(sacredStyles.container, 'py-16 md:py-24')}>
           <div className="max-w-4xl mx-auto text-center">
-            {/* Animated 404 */}
-            <div className="relative mb-8">
-              <div className="text-[150px] md:text-[200px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-400 leading-none select-none">
-                404
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-32 h-32 bg-orange-200 rounded-full blur-3xl opacity-50 animate-pulse" />
-              </div>
+            {/* Illustration */}
+            <div className="w-64 h-48 mx-auto mb-8">
+              <NotFoundIllustration />
             </div>
 
             {/* Message */}
