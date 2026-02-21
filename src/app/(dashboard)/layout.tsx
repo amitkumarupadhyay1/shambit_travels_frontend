@@ -28,6 +28,19 @@ export default function DashboardLayout({
     const { data: session } = useSession()
     const [loggingOut, setLoggingOut] = useState(false)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+    const [isMobile, setIsMobile] = useState(false)
+
+    // Detect mobile screen size
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 1024)
+        }
+        
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+        
+        return () => window.removeEventListener('resize', checkMobile)
+    }, [])
 
     // Prevent body scroll when mobile menu is open
     useEffect(() => {
@@ -124,15 +137,14 @@ export default function DashboardLayout({
             </AnimatePresence>
 
             {/* Sidebar - Desktop: Fixed, Mobile: Slide-in */}
-            <AnimatePresence>
-                <motion.aside
-                    initial={false}
-                    animate={{
-                        x: isMobileMenuOpen ? 0 : '-100%'
-                    }}
-                    transition={{ type: "tween", duration: 0.3 }}
-                    className="lg:translate-x-0 w-64 bg-white border-r border-gray-200 flex flex-col fixed h-screen z-50 lg:z-auto"
-                >
+            <motion.aside
+                initial={false}
+                animate={{
+                    x: isMobile ? (isMobileMenuOpen ? 0 : '-100%') : 0
+                }}
+                transition={{ type: "tween", duration: 0.3 }}
+                className="w-64 bg-white border-r border-gray-200 flex flex-col fixed h-screen z-50 lg:z-auto"
+            >
                     {/* Logo & Tagline */}
                     <div className="p-6 border-b border-gray-100">
                         <Link href="/" className="block">
@@ -194,7 +206,6 @@ export default function DashboardLayout({
                         </button>
                     </div>
                 </motion.aside>
-            </AnimatePresence>
 
             {/* Main Content */}
             <main className="flex-1 lg:ml-64 overflow-y-auto pt-16 lg:pt-0">
