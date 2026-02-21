@@ -47,12 +47,14 @@ export default function BookingConfirmationClient({ booking }: BookingConfirmati
   };
   
   return (
-    <div className={cn(sacredStyles.container, "max-w-4xl")}>
+    <div className={cn(sacredStyles.container, "max-w-4xl pt-8")}>
       {/* Success/Status Icon */}
-      <div className="text-center mb-8">
+      <div className="text-center mb-8 mt-8">
         {isConfirmed ? (
           <>
-            <CheckCircle className="w-20 h-20 text-green-600 mx-auto mb-4 animate-bounce" />
+            <div className="mb-6">
+              <CheckCircle className="w-24 h-24 text-green-600 mx-auto animate-bounce drop-shadow-lg" />
+            </div>
             <h1 className={cn(sacredStyles.heading.h1, "mb-4")}>
               Booking Confirmed!
             </h1>
@@ -62,7 +64,9 @@ export default function BookingConfirmationClient({ booking }: BookingConfirmati
           </>
         ) : isPending ? (
           <>
-            <Clock className="w-20 h-20 text-orange-600 mx-auto mb-4" />
+            <div className="mb-6">
+              <Clock className="w-24 h-24 text-orange-600 mx-auto" />
+            </div>
             <h1 className={cn(sacredStyles.heading.h1, "mb-4")}>
               Payment Pending
             </h1>
@@ -72,7 +76,9 @@ export default function BookingConfirmationClient({ booking }: BookingConfirmati
           </>
         ) : (
           <>
-            <AlertCircle className="w-20 h-20 text-gray-600 mx-auto mb-4" />
+            <div className="mb-6">
+              <AlertCircle className="w-24 h-24 text-gray-600 mx-auto" />
+            </div>
             <h1 className={cn(sacredStyles.heading.h1, "mb-4")}>
               Booking {booking.status}
             </h1>

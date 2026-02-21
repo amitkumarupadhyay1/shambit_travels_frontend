@@ -599,15 +599,70 @@ export default function CheckoutClient({ booking }: CheckoutClientProps) {
 
       {/* Processing Overlay */}
       {isProcessing && !showPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
-            <Loader2 className="w-16 h-16 text-orange-600 animate-spin mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Verifying Payment
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-orange-900/95 via-black/95 to-orange-900/95 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-lg mx-4 text-center border-2 border-orange-200">
+            {/* Success Animation */}
+            <div className="mb-6 relative">
+              <div className="w-24 h-24 mx-auto relative">
+                {/* Animated circles */}
+                <div className="absolute inset-0 rounded-full bg-green-100 animate-ping opacity-75"></div>
+                <div className="absolute inset-0 rounded-full bg-green-200 animate-pulse"></div>
+                {/* Check icon */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <CheckCircle className="w-16 h-16 text-green-600 animate-bounce" />
+                </div>
+              </div>
+            </div>
+
+            {/* Main Message */}
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">
+              Payment Successful! 🎉
             </h3>
-            <p className="text-gray-600">
-              Please wait while we confirm your payment...
+            <p className="text-lg text-gray-700 mb-4">
+              Verifying your payment...
             </p>
+
+            {/* Progress Indicator */}
+            <div className="mb-6">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Loader2 className="w-5 h-5 text-orange-600 animate-spin" />
+                <span className="text-sm font-medium text-orange-600">Processing</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div className="bg-gradient-to-r from-orange-500 to-orange-600 h-full rounded-full animate-[progress_2s_ease-in-out_infinite]"></div>
+              </div>
+            </div>
+
+            {/* Warning Message */}
+            <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-orange-900 mb-1">
+                    Please Do Not Close or Refresh This Page
+                  </p>
+                  <p className="text-xs text-orange-700">
+                    We&apos;re securely confirming your payment with the bank. This usually takes just a few seconds.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Security Badges */}
+            <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
+              <div className="flex items-center gap-1">
+                <Shield className="w-4 h-4 text-green-600" />
+                <span>Secure</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+                <span>Encrypted</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <CreditCard className="w-4 h-4 text-green-600" />
+                <span>PCI Compliant</span>
+              </div>
+            </div>
           </div>
         </div>
       )}
