@@ -314,11 +314,19 @@ class ApiService {
       }
     }
 
-    // Check if there's already a pending request for this endpoint
-    const pendingRequest = this.pendingRequests.get(endpoint);
-    if (pendingRequest) {
-      console.log(`⏳ Reusing pending request for ${endpoint}`);
-      return pendingRequest as Promise<T>;
+    // For search endpoints, don't reuse pending requests to allow multiple searches
+    const isSearchEndpoint = endpoint.includes('/search/');
+    
+    // Check if there's already a pending request for this endpoint (skip for search)
+    if (!isSearchEndpoint) {
+      const pendingRequest = this.pendingRequests.get(endpoint);
+      if (pendingRequest) {
+        console.log(`⏳ Reusing pending request for ${endpoint}`);
+        return pendingRequest as Promise<T>;
+      }
+    } else {
+      // Cancel any existing search request before starting a new one
+      this.cancelRequest(endpoint);
     }
 
     console.log(`🔗 API Call: ${url}`);
@@ -863,7 +871,7 @@ class ApiService {
     console.log('🔍 universalSearch called:', { query, options, endpoint });
 
     const response = await this.fetchApi<SearchResponse>(endpoint, {
-      skipCache: true, // Skip cache for now to debug
+      skipCache: true, // Always skip cache for search to ensure fresh results
       skipAuth: true, // Public endpoint
     });
 

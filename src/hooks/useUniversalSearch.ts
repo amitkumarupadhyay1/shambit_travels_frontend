@@ -39,11 +39,25 @@ export function useUniversalSearch({
   const abortControllerRef = useRef<AbortController | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const optionsRef = useRef(options);
+  const initialQueryRef = useRef(initialQuery);
 
   // Update options ref when options change
   useEffect(() => {
     optionsRef.current = options;
   }, [options]);
+
+  // Sync query with initialQuery when it changes (e.g., URL change)
+  useEffect(() => {
+    if (initialQuery !== initialQueryRef.current) {
+      console.log('🔄 initialQuery changed:', { old: initialQueryRef.current, new: initialQuery });
+      initialQueryRef.current = initialQuery;
+      setQuery(initialQuery);
+      setDebouncedQuery(initialQuery);
+      // Clear old results immediately when query changes
+      setResults(null);
+      setError(null);
+    }
+  }, [initialQuery]);
 
   // Debounce query changes
   useEffect(() => {

@@ -98,6 +98,7 @@ export default function UniversalSearchBoxWithSuggestions({
     if (onSearch) {
       onSearch(trimmedQuery);
     } else {
+      // Use router.push to navigate to search page
       router.push(`/search?q=${encodeURIComponent(trimmedQuery)}`);
     }
   };
@@ -105,6 +106,7 @@ export default function UniversalSearchBoxWithSuggestions({
   // Handle suggestion click
   const handleSuggestionClick = (result: SearchResult) => {
     setIsFocused(false);
+    clearSearch(); // Clear the search state
     router.push(result.url);
   };
 

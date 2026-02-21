@@ -10,18 +10,196 @@ import Footer from '@/components/layout/Footer';
 import { useUniversalSearch } from '@/hooks/useUniversalSearch';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import UniversalSearchBoxWithSuggestions from '@/components/search/UniversalSearchBoxWithSuggestions';
-import type { SearchResult } from '@/types/search';
+import type { SearchResult, SearchResponse } from '@/types/search';
 
-function SearchResultsContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const query = searchParams.get('q') || '';
+// Separate component for results to enable key-based reset
+function SearchResults({ 
+  results, 
+  categoryConfig, 
+  onResultClick 
+}: { 
+  results: SearchResponse;
+  categoryConfig: CategoryConfig;
+  onResultClick: (result: SearchResult) => void;
+}) {
   const [visibleResults, setVisibleResults] = useState({
     packages: 6,
     cities: 6,
     articles: 6,
     experiences: 6,
   });
+
+  const handleLoadMore = (category: keyof typeof visibleResults) => {
+    setVisibleResults((prev) => ({
+      ...prev,
+      [category]: prev[category] + 6,
+    }));
+  };
+
+  return (
+    <div className="space-y-12">
+      {/* Render each category */}
+      {(Object.keys(categoryConfig) as Array<keyof typeof categoryConfig>).map((category) => {
+        const categoryResults = results.results[category];
+        if (categoryResults.length === 0) return null;
+
+        const config = categoryConfig[category];
+        const Icon = config.icon;
+
+        return (
+          <motion.section
+            key={category}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            {/* Category Header */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className={`w-12 h-12 bg-gradient-to-br ${config.gradient} rounded-xl flex items-center justify-center shadow-lg`}>
+                <Icon className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {config.label}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  {categoryResults.length} {categoryResults.length === 1 ? 'result' : 'results'}
+                </p>
+              </div>
+            </div>
+
+            {/* Results Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {categoryResults.slice(0, visibleResults[category]).map((result: SearchResult, index: number) => (
+                <motion.button
+                  key={`${category}-${result.id}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  whileHover={{ y: -4 }}
+                  onClick={() => onResultClick(result)}
+                  className={`bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all p-6 text-left border ${config.borderColor} group`}
+                >
+                  {/* Image */}
+                  {result.image && (
+                    <div className="relative h-48 bg-gradient-to-br ${config.bgGradient} rounded-xl overflow-hidden mb-4">
+                      <Image
+                        src={result.image}
+                        alt={result.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                  )}
+
+                  {/* Content */}
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-${config.color}-600 transition-colors">
+                      {result.title}
+                    </h3>
+                    <p
+                      className="text-sm text-gray-600 mb-4 line-clamp-2"
+                      dangerouslySetInnerHTML={{ __html: result.excerpt }}
+                    />
+
+                    {/* Meta Info */}
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span className="line-clamp-1">{result.breadcrumb}</span>
+                      <ArrowRight className={`w-4 h-4 text-${config.color}-600 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all`} />
+                    </div>
+
+                    {/* Package specific info */}
+                    {'price' in result && (
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <span className="text-lg font-bold text-orange-600">
+                            ₹{String(result.price)}
+                          </span>
+                          {('duration' in result && result.duration) ? (
+                            <span className="text-sm text-gray-500">
+                              {String(result.duration)}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Article specific info */}
+                    {'author' in result && 'published_date' in result && (
+                      <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2 text-xs text-gray-500">
+                        <span>By {String(result.author)}</span>
+                        <span>•</span>
+                        <span>{new Date(String(result.published_date)).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Load More Button */}
+            {categoryResults.length > visibleResults[category] && (
+              <div className="mt-8 text-center">
+                <button
+                  onClick={() => handleLoadMore(category)}
+                  className={`inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r ${config.gradient} text-white rounded-xl hover:shadow-lg transition-all font-semibold`}
+                >
+                  Load More {config.label}
+                  <span className="text-sm opacity-90">
+                    ({categoryResults.length - visibleResults[category]} more)
+                  </span>
+                </button>
+              </div>
+            )}
+          </motion.section>
+        );
+      })}
+    </div>
+  );
+}
+
+// Category config data
+const categoryConfigData = {
+  packages: {
+    label: 'Travel Packages',
+    icon: Package,
+    color: 'orange',
+    gradient: 'from-orange-500 to-amber-500',
+    bgGradient: 'from-orange-50 to-amber-50',
+    borderColor: 'border-orange-200 hover:border-orange-300',
+  },
+  cities: {
+    label: 'Destinations',
+    icon: MapPin,
+    color: 'blue',
+    gradient: 'from-blue-500 to-cyan-500',
+    bgGradient: 'from-blue-50 to-cyan-50',
+    borderColor: 'border-blue-200 hover:border-blue-300',
+  },
+  articles: {
+    label: 'Travel Guides',
+    icon: FileText,
+    color: 'green',
+    gradient: 'from-green-500 to-emerald-500',
+    bgGradient: 'from-green-50 to-emerald-50',
+    borderColor: 'border-green-200 hover:border-green-300',
+  },
+  experiences: {
+    label: 'Experiences',
+    icon: Sparkles,
+    color: 'purple',
+    gradient: 'from-purple-500 to-pink-500',
+    bgGradient: 'from-purple-50 to-pink-50',
+    borderColor: 'border-purple-200 hover:border-purple-300',
+  },
+} as const;
+
+type CategoryConfig = typeof categoryConfigData;
+
+function SearchResultsContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const query = searchParams.get('q') || '';
 
   const { results, loading, error } = useUniversalSearch({
     initialQuery: query,
@@ -44,49 +222,6 @@ function SearchResultsContent() {
 
   const handleResultClick = (result: SearchResult) => {
     router.push(result.url);
-  };
-
-  const handleLoadMore = (category: keyof typeof visibleResults) => {
-    setVisibleResults((prev) => ({
-      ...prev,
-      [category]: prev[category] + 6,
-    }));
-  };
-
-  // Category config
-  const categoryConfig = {
-    packages: {
-      label: 'Travel Packages',
-      icon: Package,
-      color: 'orange',
-      gradient: 'from-orange-500 to-amber-500',
-      bgGradient: 'from-orange-50 to-amber-50',
-      borderColor: 'border-orange-200 hover:border-orange-300',
-    },
-    cities: {
-      label: 'Destinations',
-      icon: MapPin,
-      color: 'blue',
-      gradient: 'from-blue-500 to-cyan-500',
-      bgGradient: 'from-blue-50 to-cyan-50',
-      borderColor: 'border-blue-200 hover:border-blue-300',
-    },
-    articles: {
-      label: 'Travel Guides',
-      icon: FileText,
-      color: 'green',
-      gradient: 'from-green-500 to-emerald-500',
-      bgGradient: 'from-green-50 to-emerald-50',
-      borderColor: 'border-green-200 hover:border-green-300',
-    },
-    experiences: {
-      label: 'Experiences',
-      icon: Sparkles,
-      color: 'purple',
-      gradient: 'from-purple-500 to-pink-500',
-      bgGradient: 'from-purple-50 to-pink-50',
-      borderColor: 'border-purple-200 hover:border-purple-300',
-    },
   };
 
   return (
@@ -320,124 +455,12 @@ function SearchResultsContent() {
 
         {/* Results */}
         {query && !loading && results && results.total_count > 0 && (
-          <div className="space-y-12">
-            {/* Render each category */}
-            {(Object.keys(categoryConfig) as Array<keyof typeof categoryConfig>).map((category) => {
-              const categoryResults = results.results[category];
-              if (categoryResults.length === 0) return null;
-
-              const config = categoryConfig[category];
-              const Icon = config.icon;
-
-              return (
-                <motion.section
-                  key={category}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
-                >
-                  {/* Category Header */}
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className={`w-12 h-12 bg-gradient-to-br ${config.gradient} rounded-xl flex items-center justify-center shadow-lg`}>
-                      <Icon className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900">
-                        {config.label}
-                      </h2>
-                      <p className="text-sm text-gray-500">
-                        {categoryResults.length} {categoryResults.length === 1 ? 'result' : 'results'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Results Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {categoryResults.slice(0, visibleResults[category]).map((result, index) => (
-                      <motion.button
-                        key={`${category}-${result.id}`}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        whileHover={{ y: -4 }}
-                        onClick={() => handleResultClick(result)}
-                        className={`bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all p-6 text-left border ${config.borderColor} group`}
-                      >
-                        {/* Image */}
-                        {result.image && (
-                          <div className="relative h-48 bg-gradient-to-br ${config.bgGradient} rounded-xl overflow-hidden mb-4">
-                            <Image
-                              src={result.image}
-                              alt={result.title}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
-                          </div>
-                        )}
-
-                        {/* Content */}
-                        <div>
-                          <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-${config.color}-600 transition-colors">
-                            {result.title}
-                          </h3>
-                          <p
-                            className="text-sm text-gray-600 mb-4 line-clamp-2"
-                            dangerouslySetInnerHTML={{ __html: result.excerpt }}
-                          />
-
-                          {/* Meta Info */}
-                          <div className="flex items-center justify-between text-xs text-gray-500">
-                            <span className="line-clamp-1">{result.breadcrumb}</span>
-                            <ArrowRight className={`w-4 h-4 text-${config.color}-600 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all`} />
-                          </div>
-
-                          {/* Package specific info */}
-                          {'price' in result && (
-                            <div className="mt-3 pt-3 border-t border-gray-100">
-                              <div className="flex items-center justify-between">
-                                <span className="text-lg font-bold text-orange-600">
-                                  ₹{result.price}
-                                </span>
-                                {'duration' in result && result.duration && (
-                                  <span className="text-sm text-gray-500">
-                                    {result.duration}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Article specific info */}
-                          {'author' in result && (
-                            <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2 text-xs text-gray-500">
-                              <span>By {result.author}</span>
-                              <span>•</span>
-                              <span>{new Date(result.published_date).toLocaleDateString()}</span>
-                            </div>
-                          )}
-                        </div>
-                      </motion.button>
-                    ))}
-                  </div>
-
-                  {/* Load More Button */}
-                  {categoryResults.length > visibleResults[category] && (
-                    <div className="mt-8 text-center">
-                      <button
-                        onClick={() => handleLoadMore(category)}
-                        className={`inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r ${config.gradient} text-white rounded-xl hover:shadow-lg transition-all font-semibold`}
-                      >
-                        Load More {config.label}
-                        <span className="text-sm opacity-90">
-                          ({categoryResults.length - visibleResults[category]} more)
-                        </span>
-                      </button>
-                    </div>
-                  )}
-                </motion.section>
-              );
-            })}
-          </div>
+          <SearchResults 
+            key={query} 
+            results={results} 
+            categoryConfig={categoryConfigData}
+            onResultClick={handleResultClick}
+          />
         )}
         </div>
       </div>
